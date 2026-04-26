@@ -1,0 +1,36 @@
+---
+interface NavPost {
+  id: string;
+  data: { title: string };
+}
+interface Props {
+  prev?: NavPost;
+  next?: NavPost;
+}
+const { prev, next } = Astro.props;
+---
+{(prev || next) && (
+  <div class="prev-next">
+    {prev ? (
+      <a href={`/posts/${prev.id}`} class="pn-link pn-prev">
+        <span class="pn-label">← Previous</span>
+        <span class="pn-title">{prev.data.title}</span>
+      </a>
+    ) : <div />}
+    {next ? (
+      <a href={`/posts/${next.id}`} class="pn-link pn-next">
+        <span class="pn-label">Next →</span>
+        <span class="pn-title">{next.data.title}</span>
+      </a>
+    ) : <div />}
+  </div>
+)}
+
+<style>
+  .prev-next { display: flex; justify-content: space-between; gap: 24px; margin-top: 56px; padding-top: 32px; border-top: 1px solid var(--border); }
+  .pn-link { max-width: 45%; }
+  .pn-next { text-align: right; margin-left: auto; }
+  .pn-label { font-size: 12px; color: var(--mute); display: block; margin-bottom: 4px; }
+  .pn-title { font-size: 14px; color: var(--text); font-weight: 500; }
+  .pn-link:hover .pn-title { color: var(--accent); }
+</style>

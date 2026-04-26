@@ -1,0 +1,58 @@
+---
+interface Props {
+  current?: string;
+}
+const { current = 'home' } = Astro.props;
+const links = [
+  { key: 'home', label: 'Writing', href: '/' },
+  { key: 'archive', label: 'Archive', href: '/archive' },
+  { key: 'about', label: 'About', href: '/about' },
+];
+---
+<nav class="nav">
+  <a href="/" class="nav-logo">sangmandu.</a>
+  <div class="nav-links">
+    {links.map(l => (
+      <a href={l.href} class:list={['nav-link', { active: current === l.key }]}>
+        {l.label}
+      </a>
+    ))}
+    <span class="nav-divider" />
+    <button class="nav-search" id="search-trigger">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      ⌘K
+    </button>
+  </div>
+</nav>
+
+<style>
+  .nav {
+    padding: 18px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .nav-logo { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
+  .nav-links { display: flex; gap: 22px; font-size: 13px; color: var(--sub); align-items: center; }
+  .nav-link { color: var(--sub); }
+  .nav-link.active { color: var(--text); font-weight: 500; }
+  .nav-divider { width: 1px; height: 12px; background: var(--border); }
+  .nav-search {
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    font-size: 11px;
+    color: var(--sub);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    font-family: var(--font-body);
+  }
+</style>

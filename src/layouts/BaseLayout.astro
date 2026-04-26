@@ -1,0 +1,42 @@
+---
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import SearchPalette from '../components/SearchPalette.tsx';
+import '../styles/global.css';
+import { getCollection } from 'astro:content';
+
+interface Props {
+  title: string;
+  description?: string;
+  current?: string;
+}
+
+const { title, description = 'sangmandu의 블로그', current } = Astro.props;
+
+const allPosts = (await getCollection('posts')).sort(
+  (a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
+);
+const searchPosts = allPosts.map(p => ({
+  slug: p.id,
+  title: p.data.title,
+  tags: p.data.tags,
+  excerpt: p.data.excerpt,
+  date: p.data.date,
+}));
+---
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content={description} />
+  <title>{title} | sangmandu</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+</head>
+<body>
+  <Nav current={current} />
+  <slot />
+  <Footer />
+  <SearchPalette client:idle posts={searchPosts} />
+</body>
+</html>

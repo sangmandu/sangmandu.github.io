@@ -1,0 +1,28 @@
+---
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+interface Props {
+  headings: Heading[];
+}
+const { headings } = Astro.props;
+const filtered = headings.filter(h => h.depth <= 3);
+---
+{filtered.length > 0 && (
+  <div class="toc">
+    {filtered.map(h => (
+      <a href={`#${h.slug}`} class:list={['toc-link', `depth-${h.depth}`]}>
+        {h.text}
+      </a>
+    ))}
+  </div>
+)}
+
+<style>
+  .toc { position: sticky; top: 100px; font-size: 12px; }
+  .toc-link { display: block; color: var(--mute); padding: 4px 0; line-height: 1.4; border-left: 1px solid var(--border-soft); padding-left: 12px; }
+  .toc-link:hover { color: var(--text); }
+  .depth-3 { padding-left: 24px; }
+</style>

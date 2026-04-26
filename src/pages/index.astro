@@ -1,0 +1,43 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostList from '../components/PostList.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('posts')).sort(
+  (a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
+);
+
+const allTags = [...new Set(posts.flatMap(p => p.data.tags))];
+---
+<BaseLayout title="Home" current="home">
+  <div class="home">
+    <main>
+      <h1 class="hero-title">sangmandu.</h1>
+      <p class="hero-sub">
+        Claude Code, AI 도구, 그리고 개발 워크플로우에 대해 씁니다.
+      </p>
+      <PostList posts={posts} />
+    </main>
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h4 class="sidebar-label">Tags</h4>
+        <div class="tag-cloud">
+          {allTags.map(t => (
+            <a href={`/archive?tag=${t}`} class="tag-chip">#{t}</a>
+          ))}
+        </div>
+      </div>
+    </aside>
+  </div>
+</BaseLayout>
+
+<style>
+  .home { display: grid; grid-template-columns: 1fr 300px; gap: 48px; max-width: var(--max-width); margin: 0 auto; padding: 72px 48px; }
+  .hero-title { font-size: 56px; font-weight: 300; letter-spacing: -0.035em; line-height: 1.05; margin: 0 0 20px; }
+  .hero-sub { font-size: 17px; line-height: 1.65; color: var(--sub); margin: 0 0 56px; max-width: 560px; }
+  .sidebar { padding-top: 140px; }
+  .sidebar-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--sub); margin: 0 0 12px; }
+  .tag-cloud { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag-chip { padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 12px; color: var(--sub); }
+  .tag-chip:hover { border-color: var(--accent); color: var(--accent); }
+</style>

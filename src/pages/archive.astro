@@ -1,0 +1,57 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import TagChips from '../components/TagChips.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('posts')).sort(
+  (a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
+);
+
+const tagCounts: Record<string, number> = {};
+posts.forEach(p => p.data.tags.forEach(t => { tagCounts[t] = (tagCounts[t] || 0) + 1; }));
+const tags = [
+  { name: 'all', count: posts.length },
+  ...Object.entries(tagCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, count]) => ({ name, count })),
+];
+---
+<BaseLayout title="Archive" current="archive">
+  <div class="archive">
+    <h1 class="archive-title">Archive.</h1>
+    <p class="archive-sub">모든 글을 연도와 태그로 훑어볼 수 있어요.</p>
+    <TagChips tags={tags} />
+    <div class="archive-list" id="archive-list">
+      {posts.map(p => (
+        <a href={`/posts/${p.id}`} class="archive-row" data-tags={p.data.tags.join(',')}>
+          <span class="archive-date">{p.data.date.slice(5).replace('-', '.')}</span>
+          <span class="archive-post-title">{p.data.title}</span>
+          <span class="archive-tags">{p.data.tags.map(t => `#${t}`).join(' ')}</span>
+        </a>
+      ))}
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const tag = params.get('tag');
+  if (tag) {
+    document.querySelectorAll('.archive-row').forEach(row => {
+      const tags = (row as HTMLElement).dataset.tags?.split(',') || [];
+      if (!tags.includes(tag)) (row as HTMLElement).style.display = 'none';
+    });
+  }
+</script>
+
+<style>
+  .archive { max-width: 900px; margin: 0 auto; padding: 72px 48px 96px; }
+  .archive-title { font-size: 44px; font-weight: 300; letter-spacing: -0.035em; line-height: 1.05; margin: 0 0 12px; }
+  .archive-sub { font-size: 15px; color: var(--sub); margin: 0 0 40px; }
+  .archive-list { margin-top: 40px; }
+  .archive-row { display: grid; grid-template-columns: 60px 1fr auto; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border-soft); align-items: baseline; color: inherit; }
+  .archive-row:hover .archive-post-title { color: var(--accent); }
+  .archive-date { font-family: var(--font-mono); font-size: 12px; color: var(--sub); }
+  .archive-post-title { font-size: 15px; font-weight: 500; transition: color 0.15s; }
+  .archive-tags { font-size: 11px; color: var(--accent); white-space: nowrap; }
+</style>
