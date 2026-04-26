@@ -1,0 +1,42 @@
+---
+---
+<div class="comments">
+  <script
+    src="https://giscus.app/client.js"
+    data-repo="sangmandu/sangmandu.github.io"
+    data-repo-id="R_kgDOL3kKjA"
+    data-category="General"
+    data-category-id="DIC_kwDOL3kKjM4C7vKg"
+    data-mapping="pathname"
+    data-strict="0"
+    data-reactions-enabled="1"
+    data-emit-metadata="0"
+    data-input-position="top"
+    data-theme="light"
+    data-lang="ko"
+    data-loading="lazy"
+    crossorigin="anonymous"
+    async
+  ></script>
+</div>
+
+<script>
+  window.addEventListener('lang-change', (e: Event) => {
+    const lang = (e as CustomEvent).detail;
+    const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
+    if (iframe) {
+      iframe.contentWindow?.postMessage(
+        { giscus: { setConfig: { lang: lang === 'ko' ? 'ko' : 'en' } } },
+        'https://giscus.app'
+      );
+    }
+  });
+</script>
+
+<style>
+  .comments {
+    margin-top: 64px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+  }
+</style>

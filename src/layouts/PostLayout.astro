@@ -1,6 +1,7 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 import PrevNext from '../components/PrevNext.astro';
+import Comments from '../components/Comments.astro';
 import PostTitle from '../components/PostTitle.tsx';
 import DynamicTOC from '../components/DynamicTOC.tsx';
 
@@ -46,6 +47,7 @@ const readMin = Math.max(1, Math.ceil(wordCount / 200));
         <slot />
       </div>
       <PrevNext prev={prev} next={next} />
+      <Comments />
     </article>
     <aside class="post-toc">
       <DynamicTOC client:load />
