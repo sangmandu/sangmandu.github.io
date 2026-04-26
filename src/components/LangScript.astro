@@ -1,0 +1,16 @@
+---
+---
+<script>
+  function applyLang(lang: string) {
+    document.querySelectorAll('.lang-block').forEach(el => {
+      (el as HTMLElement).style.display = el.classList.contains(`lang-${lang}`) ? 'block' : 'none';
+    });
+  }
+
+  const stored = localStorage.getItem('lang') || 'ko';
+  applyLang(stored);
+
+  window.addEventListener('lang-change', (e: Event) => {
+    applyLang((e as CustomEvent).detail);
+  });
+</script>

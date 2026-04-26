@@ -1,0 +1,360 @@
+---
+title: "에이전트는 한 번 방향을 잡으면 돌아오지 않는다"
+title_en: "Once an Agent Picks a Direction, It Doesn't Turn Back"
+date: "2026-04-26"
+tags: ["agent", "thinking", "claude-code", "skills"]
+excerpt: "LLM의 구조적 편향을 이해하고, sub-agent로 균형을 잡는 실전 방법론."
+excerpt_en: "Understanding structural bias in LLMs and using sub-agents to counterbalance it."
+---
+
+import LangBlock from '../../components/LangBlock.astro';
+import AttentionFlow from '../../components/widgets/AttentionFlow.tsx';
+import TriangularDebate from '../../components/widgets/TriangularDebate.tsx';
+import DebateComparison from '../../components/widgets/DebateComparison.tsx';
+import VerdictAgent from '../../components/widgets/VerdictAgent.tsx';
+
+<LangBlock lang="ko">
+
+## 같은 프롬프트, 같은 컨텍스트, 다른 결과
+
+Claude Code나 Codex를 쓰다 보면 한 가지를 느끼게 된다. 에이전트가 한 번 방향을 잡으면, 그 방향에서 좀처럼 벗어나지 않는다는 것.
+
+맞는 길로 갈 때는 상관없다. 오히려 좋다. 흔들리지 않고 끝까지 간다. 문제는 잘못된 길에 들어섰을 때다. 한 번 빠지면 빠져나오질 못한다. 동일한 프롬프트, 동일한 컨텍스트로 시작해도 초반에 어떤 방향으로 첫 토큰이 흘러가느냐에 따라 결과가 완전히 달라진다.
+
+이건 에이전트를 "도구"로만 보면 이해하기 어렵다. 이건 구조적인 문제다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## Same prompt, same context, different results
+
+If you've used Claude Code or Codex long enough, you've noticed this: once an agent picks a direction, it rarely deviates.
+
+When it's the right direction, that's great — it pushes through without hesitation. The problem is when it's the wrong direction. Once it's in, it can't get out. Even with identical prompts and identical context, the outcome can be completely different depending on which way the first few tokens flow.
+
+This is hard to understand if you think of agents as mere "tools." This is a structural problem.
+
+</LangBlock>
+
+---
+
+<LangBlock lang="ko">
+
+## 왜 그런가: Attention은 양날의 검이다
+
+LLM은 autoregressive 모델이다. 이전에 생성한 모든 토큰에 attention 가중치가 걸리고, 그 가중치를 기반으로 다음 토큰이 나온다. 이건 LLM이 놀라울 정도로 일관된 텍스트를 생성할 수 있는 이유이기도 하지만, 동시에 함정이기도 하다.
+
+컨텍스트가 어느 정도 쌓이면, 그 컨텍스트의 주제와 방향에서 벗어나기가 구조적으로 어려워진다. 이미 생성된 토큰들이 다음 토큰의 방향을 끌어당기기 때문이다. 심리학에서 말하는 anchoring effect(닻 내림 효과)와 비슷한데, LLM에서는 이게 아키텍처 수준에서 일어난다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## Why this happens: Attention is a double-edged sword
+
+LLMs are autoregressive models. Every previously generated token carries attention weight, and the next token is produced based on those weights. This is why LLMs can generate remarkably coherent text — but it's also a trap.
+
+Once enough context accumulates, it becomes structurally difficult to deviate from the established direction. Previously generated tokens pull the next tokens toward themselves. It's similar to what psychology calls the anchoring effect, except in LLMs it happens at the architecture level.
+
+</LangBlock>
+
+<AttentionFlow client:visible />
+
+<LangBlock lang="ko">
+
+실제로 2025년 실험 연구에 따르면, GPT-4의 anchoring index는 0.45로, 인간 실험의 0.61에 근접했다. 초기에 주어진 힌트가 이후 판단을 끌어당기는 현상이 LLM에서도 체계적으로 나타난다는 뜻이다. 특히 전문가 힌트가 주어진 질문에서는 100% 편향이 발생했고, chain-of-thought 같은 추론 기법만으로는 이 편향을 충분히 해소하지 못했다. ([Anchoring bias in large language models, Springer 2025](https://link.springer.com/article/10.1007/s42001-025-00435-2))
+
+여기에 sycophancy(아첨 편향)가 더해진다. Anthropic의 연구에 따르면, RLHF로 학습된 모델은 사용자의 의견에 동조하는 경향이 있다. 사용자가 방향을 잡으면 모델이 그 방향을 강화하고, 모델이 방향을 잡으면 사용자도 그 흐름을 따라가기 쉬워진다. 확증 편향의 피드백 루프가 만들어지는 것이다. ([Towards Understanding Sycophancy in Language Models, Anthropic](https://www.anthropic.com/research/towards-understanding-sycophancy-in-language-models))
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+A 2025 experimental study found that GPT-4's anchoring index was 0.45, close to the 0.61 measured in human experiments. Initial hints systematically pulled LLM judgments in the anchored direction. With expert-sourced hints, bias appeared in 100% of cases. Notably, reasoning techniques like chain-of-thought alone were not sufficient to mitigate this effect. ([Anchoring bias in large language models, Springer 2025](https://link.springer.com/article/10.1007/s42001-025-00435-2))
+
+On top of this, there's sycophancy. Anthropic's research shows that RLHF-trained models tend to agree with user opinions. When the user sets a direction, the model reinforces it; when the model sets a direction, the user tends to follow. A feedback loop of confirmation bias. ([Towards Understanding Sycophancy in Language Models, Anthropic](https://www.anthropic.com/research/towards-understanding-sycophancy-in-language-models))
+
+</LangBlock>
+
+---
+
+<LangBlock lang="ko">
+
+## 이건 코딩 에이전트에서 더 심하다
+
+일반적인 대화에서는 이 편향이 크게 문제가 안 될 수 있다. 하지만 코딩 에이전트에서는 치명적이다.
+
+에이전트가 구현 방향을 잡고 코드를 쓰기 시작하면, 그 코드 자체가 컨텍스트에 들어간다. 컨텍스트에 들어간 코드는 다음 판단의 닻이 된다. "이미 이렇게 짰으니까 이 방향으로 가야지" — 이건 sunk cost fallacy(매몰비용 오류)의 기계 버전이다.
+
+여기서 흔히 시도하는 게 "지금까지 작업한 거 셀프 리뷰 해봐", "개선할 점 말해봐" 같은 요청이다. 하지만 이건 거의 안 먹힌다. Anthropic의 엔지니어링 블로그에서도 이 문제를 정확히 짚었다: *"자기가 만든 작업물을 평가하라고 하면, 에이전트는 자신감 있게 칭찬하는 경향이 있다 — 사람이 보기에 품질이 명백히 떨어져도."* 자기 컨텍스트 안에서 자기 작업을 평가하는 건, 앵커링된 상태에서 앵커를 검증하는 것과 같다. ([Harness Design for Long-Running Apps, Anthropic](https://www.anthropic.com/engineering/harness-design-long-running-apps))
+
+결국 문제의 핵심은 이것이다: **하나의 에이전트가 하나의 컨텍스트에서 작업하면, 그 컨텍스트의 편향에서 벗어날 구조적 수단이 없다.** 셀프 리뷰도, "다시 생각해봐"도, chain-of-thought도 같은 앵커 위에서 돌아간다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## It's worse with coding agents
+
+In casual conversation, this bias might not matter much. But in coding agents, it's critical.
+
+Once an agent picks an implementation direction and starts writing code, that code itself enters the context. Code in the context becomes the anchor for the next decision. "I already wrote it this way, so I should keep going this way" — this is the machine version of sunk cost fallacy.
+
+A common attempt is asking the agent to self-review: "look at what you've done so far and suggest improvements." This almost never works. Anthropic's engineering blog nailed this: *"When asked to evaluate work they've produced, agents tend to respond by confidently praising the work—even when, to a human observer, the quality is obviously mediocre."* Self-reviewing within your own context is like validating an anchor while still anchored. ([Harness Design for Long-Running Apps, Anthropic](https://www.anthropic.com/engineering/harness-design-long-running-apps))
+
+The core of the problem: **when a single agent works within a single context, there's no structural mechanism to escape that context's bias.** Not self-review, not "think again," not chain-of-thought — they all run on top of the same anchor.
+
+</LangBlock>
+
+---
+
+<LangBlock lang="ko">
+
+## 내가 쓰는 방법: 삼각토론과 다각도 리뷰
+
+그래서 나는 중요한 판단이 필요할 때, 하나의 에이전트에게 "여러 관점에서 생각해봐"라고 시키지 않는다. 그건 소용이 없다. 하나의 에이전트가 이미 형성한 컨텍스트 안에서 관점을 바꿔봐야, 같은 attention 가중치 위에서 살짝 비트는 수준이다.
+
+대신 **아예 다른 에이전트를 띄운다.**
+
+나는 이 두 가지 방법을 자주 쓰는데, 각각 `/333`과 `/sss`라는 이름으로 만들어두었다. 숫자와 문자를 세 번 반복한 건 순전히 빠르게 타이핑하기 위해서다 — 작업 흐름을 끊지 않고 바로 호출할 수 있는 shortcut이다.
+
+### 삼각토론 (/333)
+
+당장 "이 방향이 맞나, 틀리냐"를 판단해야 할 때 쓴다.
+
+세 개의 독립된 sub-agent를 띄우고, 각각에게 강제로 입장을 배정한다. 핵심은 "무조건"이라는 단어다. 찬성 에이전트는 찬성할 수밖에 없고, 반대 에이전트는 반대할 수밖에 없다. 이게 하나의 에이전트에게 "양쪽을 생각해봐"라고 말하는 것과 근본적으로 다른 이유다. 각 에이전트는 독립된 컨텍스트에서 출발하기 때문에, 서로 다른 attention 공간에서 답을 만들어낸다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## My approach: Triangular Debate and Multi-Angle Review
+
+So when an important decision is needed, I don't ask a single agent to "think about it from multiple perspectives." That doesn't work. Shifting perspectives within a context that one agent has already formed is just minor tweaking on top of the same attention weights.
+
+Instead, **I spin up entirely separate agents.**
+
+I use two methods frequently, named `/333` and `/sss`. The triple repetition of a single character is purely for fast typing — shortcuts that don't break the flow of work.
+
+### Triangular Debate (/333)
+
+Used when I need to judge: "Is this direction right or wrong?"
+
+I launch three independent sub-agents and force-assign each a position. The key word is "unconditionally." The PRO agent must advocate, the CON agent must attack. This is fundamentally different from asking a single agent to "consider both sides." Each agent starts from an independent context, generating answers in separate attention spaces.
+
+</LangBlock>
+
+<TriangularDebate client:visible />
+
+<LangBlock lang="ko">
+
+세 에이전트의 결과가 돌아오면, main agent가 종합한다. 어느 쪽 근거가 더 강한지 판단하고, 최종 방향을 결정한다.
+
+### 다각도 리뷰 (/sss)
+
+삼각토론이 "찬반"을 가릴 때 쓰는 거라면, 다각도 리뷰는 "정답이 하나가 아닐 때" 쓴다.
+
+예를 들어 브레인스토밍을 한다고 하자. 이건 찬반 문제가 아니다. 다양한 주제와 시각에서 논의가 돼야 한다. 이럴 때는 세 개의 sub-agent를 띄우되, 입장을 배정하지 않는다. 대신 "다른 리뷰어들이 놓칠 만한 것을 찾아라"라고만 지시한다.
+
+각 에이전트가 자기만의 관점을 알아서 잡는다. 한 에이전트는 성능에 집중하고, 다른 에이전트는 사용자 경험에 집중하고, 또 다른 에이전트는 "이 접근 자체가 틀렸다"고 말할 수도 있다. 이 다양성이 핵심이다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+After all three return, the main agent synthesizes. It judges which side has stronger evidence and decides the final direction.
+
+### Multi-Angle Review (/sss)
+
+If Triangular Debate is for "right or wrong" judgments, Multi-Angle Review is for "when there's no single right answer."
+
+Say you're brainstorming. This isn't a yes-or-no question. It needs diverse themes and perspectives. So I launch three sub-agents without assigning positions. The only instruction: "Find what the other reviewers would miss."
+
+Each agent picks its own angle. One might focus on performance, another on user experience, another might say "this entire approach is wrong." That diversity is the point.
+
+</LangBlock>
+
+<DebateComparison client:visible />
+
+---
+
+<LangBlock lang="ko">
+
+## 종합도 편향될 수 있다
+
+여기까지 하면 구조적으로는 괜찮아 보인다. 하지만 한 가지 더 생각해야 할 것이 있다.
+
+삼각토론의 결과를 종합하는 main agent도 편향이 있다. 자기가 처음에 작성한 코드를 찬성 에이전트가 옹호하면, 그걸 좀 더 좋게 볼 수 있다. 본인이 본인을 리뷰하는 것보다, 다른 사람의 리뷰를 받는 것이 bias를 완화하기 좋은 것과 같은 원리다.
+
+그래서 나는 종합 판단을 내리는 별도의 verdict agent를 둔다. 이 에이전트는 삼각토론의 결과만 받아서 판단한다. 원래 코드나 작업 맥락은 모른다. 오직 세 에이전트의 주장과 근거만 보고 결정한다. 셀프 리뷰가 아니라, 완전히 독립된 컨텍스트에서 출발하는 외부 리뷰인 것이다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## Even synthesis can be biased
+
+At this point, the structure looks solid. But there's one more thing to consider.
+
+The main agent that synthesizes the debate results also has bias. When the PRO agent defends code the main agent originally wrote, it might look more favorably on that argument. It's the same principle as why getting reviewed by someone else reduces bias more than reviewing your own work.
+
+So I use a separate verdict agent for the final judgment. This agent only receives the debate results. It knows nothing about the original code or work context. It decides based solely on the three agents' arguments and evidence. Not a self-review — an external review from a completely independent context.
+
+</LangBlock>
+
+<VerdictAgent client:visible />
+
+---
+
+<LangBlock lang="ko">
+
+## 단, 컨텍스트를 어떻게 넘기느냐가 관건이다
+
+이 구조가 제대로 작동하려면 한 가지 조건이 있다. sub-agent에게 컨텍스트를 어떻게 넘기느냐다.
+
+충분한 컨텍스트 없이 "찬성해봐", "반대해봐" 시키면, 피상적인 의견만 나온다. 뭘 찬성하는지, 왜 이 방향을 잡았는지, 어떤 대안이 있는지 — 이런 배경 정보가 각 sub-agent의 프롬프트에 명시적으로 들어가야 한다.
+
+반대로, 컨텍스트를 너무 많이 넘기면 main agent의 편향까지 함께 넘어갈 수 있다. 사실과 판단을 분리해서 넘기는 것이 중요하다 — "현재 상황은 이렇다"는 넘기되, "그래서 이게 맞다"는 넘기지 않는 것.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## The catch: how you pass context matters
+
+For this structure to work, there's one condition. How you pass context to sub-agents.
+
+Without sufficient context, "argue for it" or "argue against it" produces shallow opinions. What are we arguing about, why this direction was chosen, what alternatives exist — this background must be explicitly included in each sub-agent's prompt.
+
+Conversely, passing too much context can carry the main agent's bias along with it. Separating facts from judgments is key — pass "the current situation is X" but not "therefore this is correct."
+
+</LangBlock>
+
+---
+
+<LangBlock lang="ko">
+
+## 정리
+
+에이전트는 스스로의 편향을 스스로 고칠 수 없다. Autoregressive 구조 위에 쌓인 컨텍스트는 앵커가 되고, 셀프 리뷰를 시켜도 그 앵커 위에서 자기 작업을 칭찬할 뿐이다. "다시 생각해봐"도, chain-of-thought도, 같은 컨텍스트 안에서는 방향을 바꾸지 못한다.
+
+그래서 필요한 건 **맥락이 다른 외부의 간섭**이다. 독립된 컨텍스트에서 출발하는 별도의 에이전트 — 같은 사실을 보되, 축적된 추론 경로는 공유하지 않는 — 가 개입해야 비로소 다른 관점이 나온다. 삼각토론(/333)과 다각도 리뷰(/sss)는 그 간섭을 구조적으로 만들어내는 방법이다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## Summary
+
+An agent cannot fix its own bias. Context accumulated on top of autoregressive architecture becomes an anchor, and self-review just produces confident praise on top of that anchor. "Think again," chain-of-thought — nothing changes direction from within the same context.
+
+What's needed is **external intervention from a different context.** A separate agent starting from an independent context — seeing the same facts but sharing none of the accumulated reasoning path — is what it takes to produce a genuinely different perspective. Triangular Debate (/333) and Multi-Angle Review (/sss) are structured ways to create that intervention.
+
+</LangBlock>
+
+---
+
+<LangBlock lang="ko">
+
+## 부록: 실제 스킬 파일
+
+아래는 내가 실제로 사용하는 Claude Code 스킬 파일이다. `~/.claude/skills/` 디렉토리에 넣으면 바로 쓸 수 있다.
+
+### /333 — 삼각토론
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## Appendix: The actual skill files
+
+Below are the Claude Code skill files I actually use. Drop them into `~/.claude/skills/` and they work immediately.
+
+### /333 — Triangular Debate
+
+</LangBlock>
+
+```markdown
+---
+name: 333
+scope: task
+trigger: "When the user sends `333` — run a triangular debate"
+---
+
+# Triangular Debate
+
+Launch a structured debate with 3 opposing perspectives.
+
+## Agents
+
+| Agent | Role | Goal |
+|-------|------|------|
+| **PRO** | Defend the current proposal | Find supporting evidence |
+| **NEUTRAL** | Analyze objectively | Compare alternatives, trade-offs |
+| **CON** | Attack the proposal | Find fundamental flaws |
+
+## Execution
+
+1. Identify the debate topic from conversation context
+2. Launch 3 sub-agents in parallel — each must search
+   for real evidence and cite sources
+3. Synthesize: strongest argument from each, make a decision
+4. Present as comparison table with final judgment
+
+## Rules
+
+- Never skip the debate, even if the answer seems obvious
+- Agents must do web research — no evidence = just opinions
+- Must commit to a decision — "both sides have merit" not allowed
+```
+
+<LangBlock lang="ko">
+
+### /sss — 다각도 리뷰
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+### /sss — Multi-Angle Review
+
+</LangBlock>
+
+```markdown
+---
+name: sss
+scope: task
+trigger: "When the user sends `sss` — launch 3 independent
+  sub-agents to review from different angles"
+---
+
+# Sub-Agent Review
+
+Launch 3 independent agents to review the current topic
+from different angles.
+
+## Key Principles
+
+1. Each agent picks its own perspective — do not assign roles
+2. No shared context between agents — launch all 3 in parallel
+3. Tell each: "Other reviewers are looking at this too —
+   find what THEY would miss"
+
+## After All Agents Complete
+
+Organize findings by theme, not by who said what.
+The value is in the diversity of angles, not in counting votes.
+```
+
+<LangBlock lang="ko">
+
+두 파일을 `~/.claude/skills/333/SKILL.md`와 `~/.claude/skills/sss/SKILL.md`로 저장하면 된다. 작업 중 `/333` 또는 `/sss`를 입력하면 즉시 실행된다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+Save these as `~/.claude/skills/333/SKILL.md` and `~/.claude/skills/sss/SKILL.md`. Type `/333` or `/sss` during work and they fire instantly.
+
+</LangBlock>

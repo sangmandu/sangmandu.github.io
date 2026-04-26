@@ -2,6 +2,7 @@
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import SearchPalette from '../components/SearchPalette.tsx';
+import LangScript from '../components/LangScript.astro';
 import '../styles/global.css';
 import { getCollection } from 'astro:content';
 
@@ -38,5 +39,6 @@ const searchPosts = allPosts.map(p => ({
   <slot />
   <Footer />
   <SearchPalette client:idle posts={searchPosts} />
+  <LangScript />
 </body>
 </html>

@@ -1,20 +1,23 @@
 ---
 import BaseLayout from './BaseLayout.astro';
-import TOC from '../components/TOC.astro';
 import PrevNext from '../components/PrevNext.astro';
+import PostTitle from '../components/PostTitle.tsx';
+import DynamicTOC from '../components/DynamicTOC.tsx';
 
 interface Props {
   title: string;
+  titleEn?: string;
   date: string;
   tags: string[];
   excerpt: string;
+  excerptEn?: string;
   headings: { depth: number; slug: string; text: string }[];
   prev?: { id: string; data: { title: string } };
   next?: { id: string; data: { title: string } };
   wordCount: number;
 }
 
-const { title, date, tags, excerpt, headings, prev, next, wordCount } = Astro.props;
+const { title, titleEn, date, tags, excerpt, excerptEn, headings, prev, next, wordCount } = Astro.props;
 const readMin = Math.max(1, Math.ceil(wordCount / 200));
 ---
 <BaseLayout title={title}>
@@ -32,15 +35,20 @@ const readMin = Math.max(1, Math.ceil(wordCount / 200));
         <span>·</span>
         <span>{wordCount.toLocaleString()} words</span>
       </div>
-      <h1 class="post-title">{title}</h1>
-      <p class="post-excerpt">{excerpt}</p>
+      <PostTitle
+        client:load
+        title={title}
+        titleEn={titleEn}
+        excerpt={excerpt}
+        excerptEn={excerptEn}
+      />
       <div class="prose">
         <slot />
       </div>
       <PrevNext prev={prev} next={next} />
     </article>
     <aside class="post-toc">
-      <TOC headings={headings} />
+      <DynamicTOC client:load />
     </aside>
   </div>
 </BaseLayout>
@@ -60,6 +68,4 @@ const readMin = Math.max(1, Math.ceil(wordCount / 200));
   .back-link:hover { color: var(--text); }
   .post-meta { display: flex; gap: 12px; font-size: 12px; color: var(--sub); font-family: var(--font-mono); margin-bottom: 18px; }
   .meta-tag { color: var(--accent); }
-  .post-title { font-size: 40px; font-weight: 500; letter-spacing: -0.025em; line-height: 1.15; margin: 0 0 16px; }
-  .post-excerpt { font-size: 19px; line-height: 1.55; color: var(--sub); margin: 0 0 40px; font-style: italic; }
 </style>
