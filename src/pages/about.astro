@@ -1,12 +1,19 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import LangBlock from '../components/LangBlock.astro';
 ---
 <BaseLayout title="About" current="about">
   <div class="about">
     <h1 class="about-title">About.</h1>
 
-    <p>안녕하세요, sangmandu입니다.</p>
-    <p>Agent Platform 설계와 구축에 관심이 많고, Claude Code 같은 AI 에이전트 하네스를 실무에서 잘 활용하는 방법을 탐구하고 있습니다.</p>
+    <LangBlock lang="ko">
+      <p>안녕하세요, sangmandu입니다.</p>
+      <p>Agent Platform 설계와 구축에 관심이 많고, Claude Code 같은 AI 에이전트 하네스를 실무에서 잘 활용하는 방법을 탐구하고 있습니다.</p>
+    </LangBlock>
+    <LangBlock lang="en">
+      <p>Hi, I'm sangmandu.</p>
+      <p>I'm interested in designing and building Agent Platforms, and exploring how to effectively use AI agent harnesses like Claude Code in practice.</p>
+    </LangBlock>
 
     <h2 class="section-label">Links</h2>
     <div class="about-links">
@@ -20,6 +27,5 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .about-title { font-size: 44px; font-weight: 300; letter-spacing: -0.035em; line-height: 1.05; margin: 0 0 32px; }
   .about p { margin: 0 0 18px; }
   .section-label { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: var(--sub); margin: 48px 0 16px; display: flex; align-items: center; gap: 8px; }
-  .now-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--hot); }
   .about-links { display: flex; gap: 16px; font-size: 15px; }
 </style>

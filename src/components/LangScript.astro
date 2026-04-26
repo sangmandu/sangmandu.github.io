@@ -3,7 +3,11 @@
 <script>
   function applyLang(lang: string) {
     document.querySelectorAll('.lang-block').forEach(el => {
-      (el as HTMLElement).style.display = el.classList.contains(`lang-${lang}`) ? 'block' : 'none';
+      if (el.classList.contains(`lang-${lang}`)) {
+        el.classList.add('lang-active');
+      } else {
+        el.classList.remove('lang-active');
+      }
     });
   }
 
@@ -14,3 +18,8 @@
     applyLang((e as CustomEvent).detail);
   });
 </script>
+
+<style is:global>
+  .lang-block { display: none !important; }
+  .lang-block.lang-active { display: revert !important; }
+</style>

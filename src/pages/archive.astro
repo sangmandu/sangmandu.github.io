@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import TagChips from '../components/TagChips.astro';
+import LangBlock from '../components/LangBlock.astro';
 import { getCollection } from 'astro:content';
 
 const posts = (await getCollection('posts')).sort(
@@ -19,13 +20,19 @@ const tags = [
 <BaseLayout title="Archive" current="archive">
   <div class="archive">
     <h1 class="archive-title">Archive.</h1>
-    <p class="archive-sub">모든 글을 연도와 태그로 훑어볼 수 있어요.</p>
+    <LangBlock lang="ko">
+      <p class="archive-sub">모든 글을 연도와 태그로 훑어볼 수 있어요.</p>
+    </LangBlock>
+    <LangBlock lang="en">
+      <p class="archive-sub">Browse all posts by year and tag.</p>
+    </LangBlock>
     <TagChips tags={tags} />
     <div class="archive-list" id="archive-list">
       {posts.map(p => (
         <a href={`/posts/${p.id}`} class="archive-row" data-tags={p.data.tags.join(',')}>
           <span class="archive-date">{p.data.date.slice(5).replace('-', '.')}</span>
-          <span class="archive-post-title">{p.data.title}</span>
+          <span class="archive-post-title lang-block lang-ko">{p.data.title}</span>
+          <span class="archive-post-title lang-block lang-en">{p.data.title_en || p.data.title}</span>
           <span class="archive-tags">{p.data.tags.map(t => `#${t}`).join(' ')}</span>
         </a>
       ))}

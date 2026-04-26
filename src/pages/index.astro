@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostList from '../components/PostList.astro';
+import LangBlock from '../components/LangBlock.astro';
 import { getCollection } from 'astro:content';
 
 const posts = (await getCollection('posts')).sort(
@@ -13,9 +14,12 @@ const allTags = [...new Set(posts.flatMap(p => p.data.tags))];
   <div class="home">
     <main>
       <h1 class="hero-title">sangmandu.</h1>
-      <p class="hero-sub">
-        Claude Code, AI 도구, 그리고 개발 워크플로우에 대해 씁니다.
-      </p>
+      <LangBlock lang="ko">
+        <p class="hero-sub">Claude Code, AI 에이전트, 그리고 개발 워크플로우에 대해 생각을 적어봅니다.</p>
+      </LangBlock>
+      <LangBlock lang="en">
+        <p class="hero-sub">Writing about Claude Code, AI agents, and development workflows.</p>
+      </LangBlock>
       <PostList posts={posts} />
     </main>
     <aside class="sidebar">

@@ -3,9 +3,11 @@ interface Post {
   id: string;
   data: {
     title: string;
+    title_en?: string;
     date: string;
     tags: string[];
     excerpt: string;
+    excerpt_en?: string;
   };
   body?: string;
 }
@@ -37,8 +39,10 @@ const years = Object.keys(byYear).sort().reverse();
           <div class="post-tags">
             {p.data.tags.map(t => <span class="post-tag">#{t}</span>)}
           </div>
-          <h3 class="post-title">{p.data.title}</h3>
-          <p class="post-excerpt">{p.data.excerpt}</p>
+          <h3 class="post-title lang-block lang-ko">{p.data.title}</h3>
+          <h3 class="post-title lang-block lang-en">{p.data.title_en || p.data.title}</h3>
+          <p class="post-excerpt lang-block lang-ko">{p.data.excerpt}</p>
+          <p class="post-excerpt lang-block lang-en">{p.data.excerpt_en || p.data.excerpt}</p>
         </div>
       </a>
     ))}
