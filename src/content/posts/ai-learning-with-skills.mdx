@@ -1,0 +1,530 @@
+---
+title: "길게 말하는 AI에서 내가 필요한 정보만 효율적으로 얻기"
+title_en: "Getting Only What You Need from a Verbose AI"
+date: "2026-04-28"
+tags: ["ai", "learning", "claude-code", "skills"]
+excerpt: "AI가 장황해지는 구조적 이유를 이해하고, 스킬로 학습 흐름을 제어하는 방법."
+excerpt_en: "Why AI explanations get verbose, and how to control the learning flow with skills."
+---
+
+import LangBlock from '../../components/LangBlock.astro';
+import VerbosityProblem from '../../components/widgets/VerbosityProblem.tsx';
+import SbsFlow from '../../components/widgets/SbsFlow.tsx';
+import LearningComparison from '../../components/widgets/LearningComparison.tsx';
+
+<LangBlock lang="ko">
+
+## AI한테 뭔가 배우려고 하면 생기는 일
+
+"이거 설명해줘."
+
+Claude든 GPT든, 이 한마디에 대한 답변은 대부분 이렇게 돌아온다. 개념 정의부터 시작해서, 배경, 역사, 관련 개념, 예시, 주의사항, 마무리 요약까지 — 한 번에 전부 쏟아낸다.
+
+읽기 시작한다. 첫 문단은 괜찮다. 두 번째 문단에서 모르는 단어가 나온다. "이건 뭐지?" 하지만 AI는 이미 다음 주제로 넘어갔다. 질문을 하면? 답변은 온다. 하지만 원래 설명의 맥락은 이미 위로 밀려 올라갔다. 스크롤을 올려야 하고, 흐름이 끊긴다.
+
+더 큰 문제는 이 구조가 반복된다는 것이다. 전체 설명이 먼저 쏟아지고, 그 아래로 질문-답변이 쌓인다. 두 번째 질문, 세 번째 질문... 원래 설명과의 거리는 점점 멀어지고, 결국 "처음에 뭘 설명하고 있었더라?"가 된다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## What happens when you try to learn from AI
+
+"Explain this to me."
+
+Whether it's Claude or GPT, the answer to this one line almost always comes back the same way. It starts with a definition, then background, history, related concepts, examples, caveats, and a closing summary — all at once.
+
+You start reading. The first paragraph is fine. In the second paragraph, an unfamiliar term appears. "What's that?" But the AI has already moved on. Ask a question? You'll get an answer. But the original explanation has scrolled up and out of sight. The flow breaks.
+
+The bigger problem is that this pattern repeats. The full explanation dumps first, then Q&A stacks below it. Second question, third question... the distance from the original explanation grows, and eventually it's "wait, what was it explaining again?"
+
+</LangBlock>
+
+---
+
+<LangBlock lang="ko">
+
+## 왜 AI는 항상 길게 말하는가
+
+이건 AI가 멍청해서가 아니다. 오히려 반대다 — **너무 "도움이 되려고" 학습되어서** 그렇다.
+
+LLM은 RLHF(Reinforcement Learning from Human Feedback)로 학습된다. 인간 평가자가 "이 답변이 더 좋다"고 판단한 데이터로 모델이 조정되는 과정인데, 여기서 일관된 패턴이 있다: **더 많이, 더 넓게 다룬 답변이 높은 점수를 받는다.**
+
+이건 합리적으로 보인다. 질문에 대해 빠뜨림 없이 답하는 게 당연히 좋아 보이니까. 하지만 이 최적화의 부작용이 있다. 모델이 학습하는 건 "사용자의 질문에 필요한 만큼 답한다"가 아니라, **"가능한 한 포괄적으로 답한다"**가 된다.
+
+결과적으로 AI의 기본 모드는 이렇다:
+- 스코프를 넓게 잡는다
+- 관련 개념을 빠뜨리지 않으려 한다
+- 한 번의 응답에 최대한 많은 정보를 담는다
+
+이건 "이거 간단히 요약해줘"에는 괜찮다. 하지만 "이걸 제대로 이해하고 싶어"에는 맞지 않는다. 깊이 이해하려면 넓게 얕게가 아니라, 좁게 깊게 가야 하기 때문이다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## Why AI always talks too much
+
+This isn't because AI is dumb. It's the opposite — it's been trained to be **too helpful.**
+
+LLMs are trained through RLHF (Reinforcement Learning from Human Feedback). Human evaluators judge which answers are "better," and the model adjusts accordingly. There's a consistent pattern in this process: **answers that cover more ground and more breadth score higher.**
+
+This seems reasonable. Of course a thorough answer looks better than a sparse one. But this optimization has a side effect. What the model learns isn't "answer with what the user needs" but **"answer as comprehensively as possible."**
+
+The result is that AI's default mode is:
+- Cast a wide scope
+- Don't skip related concepts
+- Pack as much information as possible into one response
+
+This works fine for "give me a quick summary." But it doesn't work for "I want to actually understand this." Deep understanding requires going narrow and deep, not wide and shallow.
+
+</LangBlock>
+
+---
+
+<LangBlock lang="ko">
+
+## 핵심 문제: 학습의 핑퐁이 깨진다
+
+좋은 학습은 핑퐁이다. 선생이 하나 설명하고, 학생이 이해했는지 확인하고, 다음으로 넘어간다. 이해가 안 됐으면 다른 각도로 다시 설명한다. 이 리듬이 학습을 학습답게 만든다.
+
+하지만 AI의 기본 동작은 이 핑퐁을 깨뜨린다.
+
+결국 AI를 학습 도구로 쓰려면, **사용자가 흐름을 제어할 수 있어야 한다.** AI가 알아서 잘 해주길 기대하는 게 아니라, "여기서 끊어", "이것만 깊게", "다음으로" — 이런 제어권이 사용자한테 있어야 한다.
+
+나는 이 문제를 두 가지 스킬로 해결한다. 각각 `/sbs`와 `/rrr`이라는 이름이다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## The core problem: learning ping-pong breaks
+
+Good learning is ping-pong. The teacher explains one thing, checks if the student understood, then moves on. If not understood, re-explain from a different angle. This rhythm is what makes learning actually work.
+
+But AI's default behavior breaks this ping-pong.
+
+To use AI as a learning tool, **the user needs to control the flow.** Not hoping AI will figure it out, but having explicit control: "stop here," "go deeper on this," "next" — that control needs to be in the user's hands.
+
+I solve this with two skills: `/sbs` and `/rrr`.
+
+</LangBlock>
+
+<VerbosityProblem client:visible />
+
+---
+
+<LangBlock lang="ko">
+
+## /sbs — 한 개념씩 끊어서 배우기
+
+`/sbs`는 Step-by-Step의 줄임말이다. 핵심은 단순하다: **AI에게 한 번에 하나의 개념만 설명하게 한다.**
+
+### 작동 방식
+
+1. 주제를 받으면, 먼저 몇 개의 개념으로 나눌지 파악하고 `[1/5]` 같은 진행률을 표시한다
+2. 개념 1을 설명한다 — 정의, 예시, 왜 중요한지
+3. 확인 질문을 던진다 — "이해됐나요?"가 아니라 "이 개념을 적용하면 X는 어떻게 되지?" 같은 적용형 질문. 모든 질문에는 `[Optional]` 태그가 붙어서, 대답 없이 "next"만 쳐도 넘어갈 수 있다
+4. 사용자가 답하면 → 다음 개념으로
+5. 답이 틀리면 → 같은 개념을 다른 각도로 재설명. 이해될 때까지 넘어가지 않는다
+
+### 언제 쓰나
+
+어떤 주제에서 모르는 단어나 개념이 3~4개 꽂힐 때. "멀티에이전트 시스템"을 읽다가 consensus, orchestration, delegation, state machine 같은 키워드가 걸릴 때. 이럴 때 `/sbs`로 하나씩 깊게 파고든다.
+
+### 예시
+
+`MPMC의 개념을 알려줘 /sbs`로 실행하면 이런 식이다:
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## /sbs — Learn one concept at a time
+
+`/sbs` stands for Step-by-Step. The core idea is simple: **make AI explain exactly one concept at a time.**
+
+### How it works
+
+1. Given a topic, determine how many concepts to cover and show progress like `[1/5]`
+2. Explain concept 1 — definition, example, why it matters
+3. Ask a check question — not "does that make sense?" but "given this concept, what happens to X?" Every question is tagged `[Optional]`, so the user can just type "next" to skip
+4. If the user answers → move to next concept
+5. If the answer is wrong → re-explain from a different angle. Don't advance until it clicks
+
+### When to use
+
+When you're reading a topic and 3-4 unfamiliar terms or concepts jump out. Reading about "multi-agent systems" and keywords like consensus, orchestration, delegation, state machine catch your eye. That's when `/sbs` shines — deep dive one by one.
+
+### Example
+
+Running `Explain MPMC concepts /sbs` looks like this:
+
+</LangBlock>
+
+<SbsFlow client:visible />
+
+<LangBlock lang="ko">
+
+```
+⏺ [1/5] Producer-Consumer 기본 구조
+
+  모든 MPMC의 출발점은 Producer-Consumer 패턴입니다.
+
+  핵심은 딱 두 역할입니다:
+  - Producer (생산자): 데이터를 만들어서 내보내는 쪽
+  - Consumer (소비자): 그 데이터를 받아서 처리하는 쪽
+
+  그리고 이 둘 사이에 Queue (큐) 가 하나 끼어 있습니다.
+
+  Producer  →  [ Queue ]  →  Consumer
+  (만든다)     (쌓인다)      (꺼내 쓴다)
+
+  현실 비유: 김밥천국을 생각해보세요.
+  - 주방(Producer)이 김밥을 만들어서 카운터(Queue)에 올려놓습니다
+  - 손님(Consumer)이 카운터에서 김밥을 가져갑니다
+  - 주방은 손님이 언제 가져갈지 신경 안 쓰고,
+    손님은 주방이 언제 만들었는지 신경 안 씁니다
+
+  이게 왜 중요하냐면, Producer와 Consumer가 서로의 속도에
+  구애받지 않게 되기 때문입니다. Producer가 빠르면 큐에 쌓이고,
+  Consumer가 빠르면 큐가 비워지고 — 각자 자기 속도로 일합니다.
+  이걸 비동기 디커플링(asynchronous decoupling) 이라고 합니다.
+
+  ---
+
+  [Optional] 만약 큐 없이 Producer가 Consumer에게 직접
+  데이터를 전달한다면, 어떤 문제가 생길까요?
+```
+
+한 개념, 하나의 비유, 하나의 확인 질문. 이해되면 "next", 궁금하면 질문, 답해보고 싶으면 답한다. 내 속도로 간다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+```
+⏺ [1/5] Producer-Consumer Basics
+
+  The starting point of all MPMC is the Producer-Consumer pattern.
+
+  There are exactly two roles:
+  - Producer: the side that creates and sends data
+  - Consumer: the side that receives and processes it
+
+  Between them sits a Queue.
+
+  Producer  →  [ Queue ]  →  Consumer
+  (creates)    (buffers)     (consumes)
+
+  Real-world analogy: think of a food counter.
+  - The kitchen (Producer) makes food and places it on
+    the counter (Queue)
+  - Customers (Consumer) pick up food from the counter
+  - The kitchen doesn't care when customers pick up,
+    customers don't care when the kitchen cooked it
+
+  Why this matters: Producer and Consumer are decoupled
+  from each other's speed. If the Producer is fast, the
+  queue fills up. If the Consumer is fast, the queue drains.
+  Each works at their own pace.
+  This is called asynchronous decoupling.
+
+  ---
+
+  [Optional] What problems would arise if the Producer
+  sent data directly to the Consumer with no queue?
+```
+
+One concept, one analogy, one check question. Understood? Type "next." Curious? Ask. Want to try answering? Go ahead. You set the pace.
+
+</LangBlock>
+
+---
+
+<LangBlock lang="ko">
+
+## /rrr — 넓은 주제를 책처럼 배우기
+
+`/sbs`가 "이 단어 3개가 뭔지 모르겠어"에 적합하다면, `/rrr`은 "이 프레임워크 전체를 이해하고 싶어"에 맞는 스킬이다.
+
+`/rrr`은 Research, Refine, Respond의 줄임말이다. 이름 그대로 세 단계로 작동한다.
+
+### 작동 방식
+
+**Research** — 주제에 대해 외부 조사를 수행한다. 웹 검색, 공식 문서, 로컬 코드베이스 등 가능한 모든 소스를 뒤진다. 동시에 사용자가 이미 알고 있는 것, 가지고 있는 것을 파악한다.
+
+**Refine** — 조사 결과를 기반으로 스텝별 학습 플랜을 짠다. 이 플랜을 사용자에게 보여주고, 조정하거나 승인을 받은 뒤 시작한다.
+
+**Respond** — 각 스텝으로 들어갈 때마다 해당 주제에 대해 세부 검색을 먼저 한다. Research 단계는 전체 그림을 잡기 위한 것이고, 각 스텝의 디테일은 그때그때 새로 조사한다. 그 뒤 스토리텔링으로 시작해서 핵심 개념을 설명하고, 해당되면 사용자의 코드베이스와 연결한다. 체크포인트에서 질문이 있는지, 더 깊이 갈지, 다음으로 넘어갈지 확인한다.
+
+### SBS와의 핵심 차이
+
+둘 다 같은 원칙 위에 있다: **내가 이해할 수 있는 단위로 끊는다.** 차이는 그 "단위"의 크기와, 설명의 근거가 AI 내부 지식이냐 외부 조사냐다.
+
+### 언제 쓰나
+
+Agno라는 에이전트 프레임워크를 공부하고 싶을 때. LangGraph의 아키텍처를 이해하고 싶을 때. 새로 나온 도구의 공식 문서가 아직 부실할 때 — 여러 소스를 종합해서 책 읽듯이 배우고 싶을 때.
+
+### 예시
+
+`Agno 프레임워크에 대해서 알려줘 /rrr`로 실행하면 이런 식이다:
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## /rrr — Learn a broad topic like reading a book
+
+If `/sbs` is for "I don't know what these 3 terms mean," `/rrr` is for "I want to understand this entire framework."
+
+`/rrr` stands for Research, Refine, Respond. It works in three stages, just as the name says.
+
+### How it works
+
+**Research** — Investigate the topic through every available source: web search, official docs, local codebase. At the same time, identify what the user already knows or already has.
+
+**Refine** — Build a step-by-step learning plan from the research. Present it to the user, let them adjust or approve, then begin.
+
+**Respond** — Before each step, do a focused search on that specific subtopic. The Research stage was for the big picture; each step gets its own deep dive for accurate details. Then explain with storytelling, connect to the user's codebase when applicable, and end with a checkpoint: questions, go deeper, or move on.
+
+### Key differences from SBS
+
+Both rest on the same principle: **break it into units I can actually absorb.** The difference is the size of those units, and whether explanations come from AI's internal knowledge or external research.
+
+### When to use
+
+When you want to study an agent framework like Agno. When you want to understand LangGraph's architecture. When a new tool's docs are still sparse — and you want to synthesize multiple sources and learn like reading a book.
+
+### Example
+
+Running `Tell me about the Agno framework /rrr` looks like this:
+
+</LangBlock>
+
+<LearningComparison client:visible />
+
+<LangBlock lang="ko">
+
+```
+⏺ 리서치 완료. 학습 플랜을 잡겠습니다.
+
+  ## Research complete. Here's the learning plan:
+
+  ### Current state (이미 가지고 있는 것)
+  - (사용자의 코드베이스에서 관련 코드/설정이 발견되면 여기에 표시)
+
+  ### Steps
+  1. Agno의 탄생 배경 — Phidata에서 Agno로,
+     왜 "또 다른 프레임워크"가 필요했는가
+  2. 3-Primitive 아키텍처 — Agent → Team → Workflow,
+     Agno가 세상을 모델링하는 방법
+  3. Agent 내부 해부 — 실행 루프, 모델 추상화, Tool 호출 흐름
+  4. Context Engineering — Instructions, Few-shot, 동적 컨텍스트
+  5. Knowledge & RAG — Agentic RAG vs Traditional RAG
+  6. Team & Multi-Agent — Leader/Member, Route/Broadcast/Coordinate
+  7. Workflow 오케스트레이션 — 결정론적 파이프라인 설계
+  8. 프로덕션 배포 (AgentOS) — Stateless 아키텍처, 수평 스케일링
+  9. 경쟁 프레임워크 비교 — LangGraph vs CrewAI vs Agno
+
+  Ready? "1"을 눌러서 시작하시거나,
+  플랜을 조정하고 싶으시면 말씀해 주세요.
+
+  Sources:
+  - Agno GitHub
+  - Agno 공식 문서
+  - DeepWiki - Core Concepts
+  - LangWatch - Framework 비교
+  - ...
+```
+
+플랜이 마음에 들면 "1"을 치고 시작한다. "6번부터 해줘"도 되고, "7번은 빼줘"도 된다. 그리고 각 스텝으로 들어갈 때마다 AI가 해당 주제에 대해 새로 검색하고, 그 결과를 기반으로 설명한다. Research 단계에서 잡은 큰 그림 위에, 각 챕터의 디테일은 그때그때의 최신 정보로 채워지는 것이다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+```
+⏺ Research complete. Here's the learning plan:
+
+  ### Current state (what you already have)
+  - (any related code/configs found in your codebase shown here)
+
+  ### Steps
+  1. Why Agno exists — from Phidata to Agno,
+     why "yet another framework" was needed
+  2. 3-Primitive Architecture — Agent → Team → Workflow,
+     how Agno models the world
+  3. Agent Internals — execution loop, model abstraction,
+     tool call flow
+  4. Context Engineering — Instructions, Few-shot,
+     dynamic context
+  5. Knowledge & RAG — Agentic RAG vs Traditional RAG
+  6. Team & Multi-Agent — Leader/Member,
+     Route/Broadcast/Coordinate modes
+  7. Workflow Orchestration — deterministic pipeline design
+  8. Production Deployment (AgentOS) — Stateless architecture,
+     horizontal scaling
+  9. Framework Comparison — LangGraph vs CrewAI vs Agno
+
+  Ready? Say "1" to start,
+  or ask me to adjust the plan.
+
+  Sources:
+  - Agno GitHub
+  - Agno Official Docs
+  - DeepWiki - Core Concepts
+  - LangWatch - Framework Comparison
+  - ...
+```
+
+Like the plan? Type "1" to start. "Start from 6" works too. "Skip 7" works too. And each time you enter a step, the AI does a fresh search on that specific topic and explains based on those results. The big picture from the Research stage, filled in with up-to-date details at each chapter.
+
+</LangBlock>
+
+---
+
+<LangBlock lang="ko">
+
+## 요점은 스킬이 아니다
+
+`/sbs`와 `/rrr`은 결국 텍스트 파일이다. 마법은 없다. 진짜 핵심은 이것이다:
+
+**AI가 알아서 잘 설명해줄 거라고 기대하지 않는다.**
+
+AI는 생성 모델이다. 가능한 한 많이, 가능한 한 포괄적으로 답하도록 학습되어 있다. 이건 바뀌지 않는다. 기다려봐야 의미 없다.
+
+대신 **사용자가 구조를 만든다.** "한 번에 하나만", "먼저 조사하고 말해", "내가 다음이라고 할 때까지 기다려" — 이 규칙들을 AI에게 미리 심어두면, AI는 그 규칙 안에서 움직인다. 장황함이 구조적으로 차단된다.
+
+[이전 글](/posts/agent-bias-and-how-to-fight-it)에서는 에이전트의 편향을 외부 에이전트로 깨는 방법을 다뤘다. 이번 글에서는 AI의 장황함을 **사용자의 흐름 제어**로 깨는 방법을 다뤘다. 공통점은 같다: AI를 그냥 쓰면 안 된다. **구조를 만들어야 도구가 된다.**
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## The point isn't the skills
+
+`/sbs` and `/rrr` are just text files. No magic. The real point is this:
+
+**Don't expect AI to explain things well on its own.**
+
+AI is a generative model. It's trained to answer as much and as comprehensively as possible. That's not going to change. Waiting won't help.
+
+Instead, **the user creates structure.** "One at a time," "research first, then talk," "wait until I say next" — plant these rules in the AI beforehand, and it operates within them. Verbosity is structurally blocked.
+
+In the [previous post](/posts/agent-bias-and-how-to-fight-it), I covered breaking agent bias with external agents. This post covers breaking AI verbosity with **user-controlled flow.** The common thread: don't just use AI as-is. **Create structure, and it becomes a tool.**
+
+</LangBlock>
+
+---
+
+<LangBlock lang="ko">
+
+## 부록: 실제 스킬 파일
+
+아래는 내가 실제로 사용하는 Claude Code 스킬 파일이다. `~/.claude/skills/` 디렉토리에 넣으면 바로 쓸 수 있다.
+
+### /sbs — Step-by-Step Teaching
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## Appendix: The actual skill files
+
+Below are the Claude Code skill files I actually use. Drop them into `~/.claude/skills/` and they work immediately.
+
+### /sbs — Step-by-Step Teaching
+
+</LangBlock>
+
+```markdown
+---
+name: sbs
+scope: interaction
+trigger: "When the user sends `sbs` — switch to step-by-step
+  teaching mode"
+---
+
+# Step-by-Step Teaching (sbs)
+
+The user wants you to teach one concept at a time.
+
+## How it works
+
+Before teaching, state how many concepts you plan to cover.
+Prefix each with a progress marker like `[1/10]`.
+
+1. **Explain exactly one concept.**
+   Definition → example → why it matters.
+2. End with **1–3 check questions** prefixed with `[Optional]`.
+   Application questions, not yes/no.
+3. Move on when the user answers or signals "next / ok".
+4. If the user's answer shows misunderstanding,
+   re-explain from a different angle. Do not advance.
+
+## Rules
+
+- Keep it tight. 1–3 examples per concept.
+- Examples must be concrete — code, analogy, or real situation.
+```
+
+<LangBlock lang="ko">
+
+### /rrr — Research, Refine, Respond
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+### /rrr — Research, Refine, Respond
+
+</LangBlock>
+
+```markdown
+---
+name: rrr
+scope: interaction
+trigger: "When the user sends `rrr <topic>` — deep-research
+  the topic and teach it step-by-step"
+---
+
+# Research, Refine, Respond (rrr)
+
+Research the topic thoroughly, then teach through interactive
+step-by-step conversation.
+
+## Research
+1. Research the topic (web search, docs, codebase)
+2. Identify what the user already has
+
+## Refine
+3. Build a step-by-step learning plan
+4. Present the plan and get approval
+
+## Respond
+For each step:
+1. **Research this step's topic first** — focused search
+   on the specific subtopic before explaining
+2. Explain the concept — analogies, diagrams, examples
+3. Connect to the user's codebase (if relevant)
+4. End with a checkpoint — wait for user response
+
+## Rules
+
+- Never dump all steps at once. 1 step = 1 message.
+- Research before each step, not just at the start.
+- Each step should be self-contained.
+```
+
+<LangBlock lang="ko">
+
+두 파일을 `~/.claude/skills/sbs/SKILL.md`와 `~/.claude/skills/rrr/SKILL.md`로 저장하면 된다. 작업 중 `/sbs` 또는 `/rrr`을 입력하면 즉시 실행된다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+Save these as `~/.claude/skills/sbs/SKILL.md` and `~/.claude/skills/rrr/SKILL.md`. Type `/sbs` or `/rrr` during work and they fire instantly.
+
+</LangBlock>
