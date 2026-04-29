@@ -4,6 +4,7 @@ import PrevNext from '../components/PrevNext.astro';
 import Comments from '../components/Comments.astro';
 import PostTitle from '../components/PostTitle.tsx';
 import DynamicTOC from '../components/DynamicTOC.tsx';
+import WordCount from '../components/WordCount.tsx';
 
 interface Props {
   title: string;
@@ -13,13 +14,14 @@ interface Props {
   excerpt: string;
   excerptEn?: string;
   headings: { depth: number; slug: string; text: string }[];
-  prev?: { id: string; data: { title: string } };
-  next?: { id: string; data: { title: string } };
-  wordCount: number;
+  prev?: { id: string; data: { title: string; title_en?: string } };
+  next?: { id: string; data: { title: string; title_en?: string } };
+  wordCountKo: number;
+  wordCountEn: number;
 }
 
-const { title, titleEn, date, tags, excerpt, excerptEn, headings, prev, next, wordCount } = Astro.props;
-const readMin = Math.max(1, Math.ceil(wordCount / 200));
+const { title, titleEn, date, tags, excerpt, excerptEn, headings, prev, next, wordCountKo, wordCountEn } = Astro.props;
+const readMin = Math.max(1, Math.ceil(wordCountKo / 200));
 ---
 <BaseLayout title={title}>
   <div class="post-grid">
@@ -34,7 +36,7 @@ const readMin = Math.max(1, Math.ceil(wordCount / 200));
         <span>·</span>
         <span>{readMin} min</span>
         <span>·</span>
-        <span>{wordCount.toLocaleString()} words</span>
+        <WordCount client:load ko={wordCountKo} en={wordCountEn} />
       </div>
       <PostTitle
         client:load

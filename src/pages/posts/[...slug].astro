@@ -19,10 +19,11 @@ export async function getStaticPaths() {
 
 const { post, prev, next } = Astro.props;
 const { Content, headings } = await render(post);
-const koBody = post.body
-  ? post.body.replace(/<LangBlock lang="en">[\s\S]*?<\/LangBlock>/g, '').replace(/```[\s\S]*?```/g, '').replace(/import .*\n/g, '')
-  : '';
-const wordCount = koBody.split(/\s+/).filter(Boolean).length;
+const rawBody = post.body || '';
+const koBody = rawBody.replace(/<LangBlock lang="en">[\s\S]*?<\/LangBlock>/g, '').replace(/```[\s\S]*?```/g, '').replace(/import .*\n/g, '');
+const enBody = rawBody.replace(/<LangBlock lang="ko">[\s\S]*?<\/LangBlock>/g, '').replace(/```[\s\S]*?```/g, '').replace(/import .*\n/g, '');
+const wordCountKo = koBody.split(/\s+/).filter(Boolean).length;
+const wordCountEn = enBody.split(/\s+/).filter(Boolean).length;
 ---
 <PostLayout
   title={post.data.title}
@@ -34,7 +35,8 @@ const wordCount = koBody.split(/\s+/).filter(Boolean).length;
   headings={headings}
   prev={prev}
   next={next}
-  wordCount={wordCount}
+  wordCountKo={wordCountKo}
+  wordCountEn={wordCountEn}
 >
   <Content />
 </PostLayout>
