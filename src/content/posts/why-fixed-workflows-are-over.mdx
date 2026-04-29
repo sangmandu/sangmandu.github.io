@@ -1,0 +1,178 @@
+---
+title: "내 워크플로우를 스킬로 자동화하기 (1)"
+title_en: "Automating My Workflow with Skills (1)"
+date: "2026-04-30"
+tags: ["agent", "claude-code", "skills", "workflow"]
+excerpt: "AI한테 내 작업 과정을 맡기려면 프롬프트만으로는 안 됐다."
+excerpt_en: "Handing off my work process to AI required more than prompts."
+---
+
+import LangBlock from '../../components/LangBlock.astro';
+import WorkflowEvolution from '../../components/widgets/WorkflowEvolution.tsx';
+import WfPipeline from '../../components/widgets/WfPipeline.tsx';
+import WfSplitPipeline from '../../components/widgets/WfSplitPipeline.tsx';
+
+<LangBlock lang="ko">
+
+## 나는 내 작업 과정을 AI가 알아서 다 해주길 원했다
+
+나는 AI한테 이렇게 입력했다. "티켓 만들고, 브랜치 만들고, 테스트 짜고, 구현하고, PR 올려줘." 매번 작업을 시작할 때마다 이런 식으로 내가 원하는 흐름을 직접 타이핑했다.
+
+두 가지 문제가 있었다. 첫째, 작업이 진행되면서 컨텍스트가 길어지면 AI가 시킨 것 중에 하나둘 빼먹기 시작한다. 시키지 않은 행동을 하기도 한다. 묻지 않아도 되는 걸 자꾸 물어보기도 한다. 둘째, 나는 매번 비슷한 워크플로우로 일하는데, 매번 같은 내용을 수동으로 반복 입력해야 했다. 비효율적이다.
+
+AI가 내 말을 잘 듣도록, 그리고 매번 반복하지 않아도 되도록 — 구조적인 메커니즘이 필요했다. 이 구조를 어떻게 만들어야 할까 고민하기 시작했다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## I wanted AI to handle my entire process
+
+I typed instructions to the AI like this: "Create a ticket, create a branch, write tests, implement, open a PR." Every time I started work, I'd manually type out the flow I wanted.
+
+Two problems. First, as work progressed and context grew, the AI started dropping things I asked for. It did things I never asked. It kept asking questions that didn't need asking. Second, I work in roughly the same workflow every time, but I had to manually repeat the same input each session. Inefficient.
+
+I needed a structural mechanism — both to make AI follow instructions reliably, and to stop repeating myself. I started thinking about how to build it.
+
+</LangBlock>
+
+---
+
+<LangBlock lang="ko">
+
+## 그래프를 그리던 시절
+
+이 문제를 풀기 위한 가장 대표적인 접근이 LangGraph였다. 내가 원하는 흐름을 노드와 엣지로 정의하고, 각 노드에서 LLM을 호출하는 구조. "여기서 이걸 하고 → 결과가 이러면 저쪽으로 → 아니면 이쪽으로" 흐름을 코드로 고정시키는 거다.
+
+잘 동작했다. 근데 문제는 새로운 흐름이 생길 때마다 코드를 고쳐야 한다는 것이었다. 분기 하나 추가하려면 노드를 만들고 엣지를 연결하고 프롬프트를 짜야 했다. 그리고 더 근본적인 문제가 있었다. Claude Code나 Codex 같은 에이전트 하니스가 나오면서, **하니스 자체가 이미 하나의 런타임 오케스트레이터**가 됐다. 프롬프트를 받고, 도구를 쓰고, 판단하고, 다음 행동을 결정하는 것 — 이게 하니스가 하는 일이다.
+
+그런데 LangGraph를 쓰면 어떻게 되냐면, 이 하니스 위에 또 다른 오케스트레이터를 올리는 꼴이 된다. LangGraph 그래프 안에서 Claude CLI를 호출하는 식. 오케스트레이터가 오케스트레이터를 감싸는 구조가 되는 거다. 배보다 배꼽이 커진다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## When we drew graphs
+
+The most prominent approach to this problem was LangGraph. Define the flow you want with nodes and edges, call the LLM at each node. "Do this here → if result is X, go there → otherwise go here" — fix the flow in code.
+
+It worked. But the problem was that every new flow required changing code. Adding one branch meant creating a node, connecting edges, writing a prompt. And there was a more fundamental issue. When agent harnesses like Claude Code and Codex arrived, **the harness itself became a runtime orchestrator.** Receiving prompts, using tools, making judgments, deciding next actions — that's what the harness does.
+
+So what happens when you use LangGraph? You end up putting another orchestrator on top of the harness. Calling Claude CLI from inside a LangGraph graph. An orchestrator wrapping an orchestrator. The tail wagging the dog.
+
+</LangBlock>
+
+<WorkflowEvolution client:visible />
+
+---
+
+<LangBlock lang="ko">
+
+## 그러면 하니스 위에서 어떻게 해야 하나
+
+하니스 자체가 오케스트레이터라면, 그 위에 그래프를 올릴 게 아니라 하니스가 이해할 수 있는 방식으로 지식을 전달하면 된다.
+
+그러면 내 워크플로우를 프롬프트에 가득 적어서 제공하면 될까? 그렇지 않다. 요리사한테 김치볶음밥 하나 만들어달라고 했는데, 50가지 레시피를 전부 읽은 다음에야 만들기 시작한다면? 토큰이 많아지면 비용이 들고, prefill에 시간이 걸리니까 느려진다. 그리고 지금 당장 필요한 작업과 관련 없는 컨텍스트가 끼어 있으면 품질도 떨어질 수 있다. 그래서 필요한 지시사항만 필요한 순간에 로드하는 방식을 쓴다. 이게 스킬이다.
+
+lazy loading과 비슷한 패턴이다. 프롬프트에 모든 지시사항을 다 넣어두는 게 아니라, "이런 스킬이 있고, 이런 상황에서 쓴다"는 메타 정보만 에이전트에게 알려준다. 에이전트가 작업하다가 해당 상황이 오면 그때 스킬을 꺼내서 전체 내용을 읽는다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## So how do you work on top of a harness?
+
+If the harness itself is the orchestrator, don't put a graph on top of it — deliver knowledge in a way the harness understands.
+
+So should I just pack my workflow into the prompt? No. Imagine asking a chef to make kimchi fried rice, but they read all 50 recipes in the cookbook first. More tokens means higher cost, prefill takes time, and context unrelated to the current task can degrade quality. So you load only the instructions you need, only when you need them. That's what skills are.
+
+It's a pattern similar to lazy loading. Instead of packing every instruction into the prompt, you give the agent just the metadata: "this skill exists, use it in this situation." When the agent encounters that situation during work, it pulls the skill and reads the full content then.
+
+</LangBlock>
+
+---
+
+<LangBlock lang="ko">
+
+## 스킬은 이렇게 생겼다
+
+스킬은 보통 `SKILL.md`라는 파일 하나로 되어 있다. 거기에 "이 스킬이 호출되면 이런 워크플로우를 따라 진행하세요"라고 적혀 있고, 에이전트는 그걸 읽고 해당 워크플로우를 실행한다. 내가 원하는 작업 과정을 텍스트로 적어두면, 에이전트가 그대로 따라가는 구조다.
+
+나는 개발할 때 새 기능을 추가하려고 하면 이런 과정을 거친다: 티켓을 만들고, 브랜치를 만들고, 구현할 기능을 명세하고, 계획을 세우고, 계획을 검증하고, 테스트를 먼저 짜고, 구현하고, 셀프 리뷰하고, PR을 만들고, CI를 통과시키고, 코드 리뷰에 대응하고, 머지한다. 이 전체 과정을 하나의 `SKILL.md`에 적어두면 이렇게 생긴다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## What a skill looks like
+
+A skill is typically a single `SKILL.md` file. It says "when this skill is invoked, follow this workflow." The agent reads it and executes that workflow. You write down the process you want in text, and the agent follows it.
+
+When I'm developing and want to add a new feature, this is what I do: create a ticket, create a branch, write the spec, make a plan, validate the plan, write tests first, implement, self-review, open a PR, pass CI, respond to code review, merge. Put all of this in a single `SKILL.md` and it looks like this.
+
+</LangBlock>
+
+<WfPipeline client:visible />
+
+<LangBlock lang="ko">
+
+근데 이렇게 하면 결국 도입부에서 말한 문제가 반복된다. 에이전트는 이 긴 지시사항을 한 번에 다 읽고, 작업을 진행하면서 컨텍스트가 쌓이고, 뒤쪽 지시를 빠뜨리기 시작한다. 매번 타이핑하는 수고는 줄었지만, 에이전트가 놓치는 문제는 해결되지 않는다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+But this repeats the same problem from the intro. The agent reads all these instructions at once, context piles up as work progresses, and it starts dropping instructions toward the end. You've saved the typing, but the agent still forgets.
+
+</LangBlock>
+
+---
+
+<LangBlock lang="ko">
+
+## 태스크 단위로 쪼개기
+
+그래서 나는 다르게 했다. 전체 워크플로우를 하나의 파일에 담지 않고, 각 태스크를 독립된 스킬로 분리했다. 핵심은 이거다: 에이전트가 티켓을 만들 때는 티켓에 대한 지시사항만 받고, 테스트를 짤 때는 테스트에 대한 지시사항만 받는다.
+
+"지시사항 12개를 먼저 다 읽고, 그 다음에 하나씩 실행"이 아니라, "지시사항 1을 읽고 실행하고, 지시사항 2를 읽고 실행하고, ..." 이런 흐름이다. 각 태스크 시점에 필요한 컨텍스트만 제공되니까, 앞에 쌓인 작업 내용에 묻혀서 지시를 잊어버리는 일이 줄어든다.
+
+그리고 태스크 단위로 나눠져 있으니까, 에이전트가 스텝을 건너뛸 수 없다. 하나를 끝내야 다음 지시사항이 나온다. 12개 중에 3번째를 까먹고 넘어가는 일이 구조적으로 불가능하다.
+
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## Breaking it into tasks
+
+So I did it differently. Instead of putting the entire workflow in one file, I separated each task into its own independent skill. The key: when the agent creates a ticket, it only receives the ticket instructions. When it writes tests, it only receives the test instructions.
+
+Not "read all 12 instructions first, then execute one by one" but "read instruction 1, execute, read instruction 2, execute, ..." Instructions are provided at the moment of each task, so they don't get buried under the context of previous work.
+
+And because it's broken into task units, the agent can't skip steps. One must finish before the next instructions appear. Structurally impossible to forget step 3 out of 12 and move on.
+
+</LangBlock>
+
+<WfSplitPipeline client:visible />
+
+---
+
+<LangBlock lang="ko">
+
+## 결과, 그리고 다음 편
+
+이렇게 바꾸고 나서 에이전트가 내 워크플로우를 빠뜨리지 않고 끝까지 실행하게 됐다. 매번 같은 내용을 타이핑할 필요도 없어졌다. 도입부에서 말한 두 가지 문제가 모두 해결된 거다.
+
+근데 내 워크플로우는 위의 예시처럼 5개 스킬로 깔끔하게 자동화하기엔 현실이 훨씬 복잡했다. 각 스킬 안에 뭘 적어야 에이전트가 제대로 동작하는지, 스킬 간의 순서는 어떻게 관리하는지, 에이전트가 스텝 사이에서 멈추거나 질문하지 않게 하려면 어떤 장치가 필요한지. 다음 편에서 이야기한다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## Results, and what's next
+
+After this change, the agent started executing my entire workflow without dropping steps. No more repetitive typing either. Both problems from the intro, solved.
+
+But my workflow was far too complex to automate cleanly with just 5 skills like the example above. What to write inside each skill so the agent actually behaves, how to manage ordering between skills, what mechanisms are needed to keep the agent from stopping or asking questions between steps. That's the next post.
+
+</LangBlock>
