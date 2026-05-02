@@ -134,10 +134,11 @@ But this repeats the same problem from the intro. The agent reads all these inst
 
 그래서 나는 다르게 했다. 전체 워크플로우를 하나의 파일에 담지 않고, 각 태스크를 독립된 스킬로 분리했다. 핵심은 이거다: 에이전트가 티켓을 만들 때는 티켓에 대한 지시사항만 받고, 테스트를 짤 때는 테스트에 대한 지시사항만 받는다.
 
-"지시사항 12개를 먼저 다 읽고, 그 다음에 하나씩 실행"이 아니라, "지시사항 1을 읽고 실행하고, 지시사항 2를 읽고 실행하고, ..." 이런 흐름이다. 각 태스크 시점에 필요한 컨텍스트만 제공되니까, 앞에 쌓인 작업 내용에 묻혀서 지시를 잊어버리는 일이 줄어든다.
+"지시사항 12개를 먼저 다 읽고, 그 다음에 하나씩 실행"이 아니라, "지시사항 1을 읽고 실행하고, 지시사항 2를 읽고 실행하고, ..." 이런 흐름이다. 이 구조에서는 **가장 관련성 있는 지시사항이 실제 실행과 바로 붙어 있다.** 한꺼번에 12개를 읽으면 실행 시점에 해당 지시사항은 이미 수천 토큰 위로 밀려 올라가 있다. 하지만 읽고 바로 실행하는 구조에서는 지시와 실행 사이의 거리가 최소화된다. 컨텍스트가 썩지 않는다(context rot이 안 생긴다).
 
 그리고 태스크 단위로 나눠져 있으니까, 에이전트가 스텝을 건너뛸 수 없다. 하나를 끝내야 다음 지시사항이 나온다. 12개 중에 3번째를 까먹고 넘어가는 일이 구조적으로 불가능하다.
 
+이 방식의 장점은 에이전트 쪽에만 있는 게 아니다. **사용자 쪽에도 있다.** 각 스킬이 의미론적 단위로 분리되어 있으니까, 스킬을 고치고 싶을 때 해당 파일만 열면 된다. 전체 워크플로우를 한 파일에 담아두면, "테스트 관련 지시사항 어디 있었지?" 하면서 스크롤해야 하고, 수정하다가 다른 부분을 건드릴 위험도 있다. 태스크 단위로 분리하면 편집 단위가 곧 의미 단위다. 그리고 실행 중에 에이전트가 지금 어느 단계에 있는지 파악하는 것도 쉬워진다 — 지금 어떤 스킬이 로드되어 있는지만 보면 된다.
 
 </LangBlock>
 
@@ -147,9 +148,11 @@ But this repeats the same problem from the intro. The agent reads all these inst
 
 So I did it differently. Instead of putting the entire workflow in one file, I separated each task into its own independent skill. The key: when the agent creates a ticket, it only receives the ticket instructions. When it writes tests, it only receives the test instructions.
 
-Not "read all 12 instructions first, then execute one by one" but "read instruction 1, execute, read instruction 2, execute, ..." Instructions are provided at the moment of each task, so they don't get buried under the context of previous work.
+Not "read all 12 instructions first, then execute one by one" but "read instruction 1, execute, read instruction 2, execute, ..." In this structure, **the most relevant instructions are right next to the actual execution.** When you read all 12 at once, by the time you execute step 8, those instructions have been pushed thousands of tokens above. But when you read and immediately execute, the distance between instruction and execution is minimized. Context doesn't rot.
 
 And because it's broken into task units, the agent can't skip steps. One must finish before the next instructions appear. Structurally impossible to forget step 3 out of 12 and move on.
+
+The benefits aren't just on the agent's side — **they're on the user's side too.** Each skill is a self-contained semantic unit, so when you want to edit one, you just open that file. When the entire workflow lives in a single file, it's "where were the test instructions again?" followed by scrolling and the risk of accidentally touching something else. With task-level splitting, the unit of editing is the unit of meaning. And during execution, it's easy to tell where the agent is — just look at which skill is currently loaded.
 
 </LangBlock>
 

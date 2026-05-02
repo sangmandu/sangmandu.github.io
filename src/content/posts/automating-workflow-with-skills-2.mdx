@@ -1,0 +1,364 @@
+---
+title: "내 워크플로우를 스킬로 자동화하기 (2)"
+title_en: "Automating My Workflow with Skills (2)"
+date: "2026-05-03"
+tags: ["agent", "claude-code", "skills", "workflow"]
+excerpt: "스킬을 쪼개는 건 시작이었다. 진짜 문제는 수십 개를 관리하는 것이었다."
+excerpt_en: "Splitting into skills was just the start. The real challenge was managing dozens of them."
+---
+
+import LangBlock from '../../components/LangBlock.astro';
+import StepRegistry from '../../components/widgets/StepRegistry.tsx';
+import CompleteStepFlow from '../../components/widgets/CompleteStepFlow.tsx';
+import SkillSkipProblem from '../../components/widgets/SkillSkipProblem.tsx';
+import AutomationGap from '../../components/widgets/AutomationGap.tsx';
+
+<LangBlock lang="ko">
+
+## 내가 일하는 과정을 모두 스킬로 나열해보자
+
+[이전 편](/posts/why-fixed-workflows-are-over)에서 워크플로우를 태스크 단위로 쪼개서 스킬을 관리하면 context rot을 없애서 에이전트가 지시를 잊어버리는 문제를 줄일 수 있다고 이야기했다. 하지만 예시는 5개짜리 간소화 버전이었다. 실제 내 작업 과정은 5개로 끝나지 않는다.
+
+내가 feature 하나를 처음부터 끝까지 만들 때, 보통 이런 순서로 작업을 했다. 먼저 Linear에 티켓을 만든다. 브랜치를 딴다. 요구사항을 정리해서 spec을 만들고, 그걸 기반으로 구현 계획을 세운다. 계획이 나오면 검증하고, 테스트를 먼저 짠다. 유닛, 통합, E2E까지. 테스트가 다 실패하는 걸 확인하고 나서야 구현에 들어간다. 구현이 끝나면 셀프 리뷰를 하고, 커밋하고, PR을 만들고, CI를 통과시키고, 코드 리뷰에 대응하고, 머지한다.
+
+이 과정을 하나하나 스킬 파일로 쪼개봤더니, 수십 개가 됐다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## Listing my entire work process as skills
+
+In the [previous post](/posts/why-fixed-workflows-are-over), I explained how managing skills by splitting the workflow into task-level units eliminates context rot and reduces the problem of the agent forgetting instructions. But that was a simplified 5-skill example. My real work process doesn't end at 5.
+
+When I build a feature from start to finish, it usually went like this. Create a ticket on Linear. Branch off. Write a spec from the requirements, then build an implementation plan from that. Validate the plan, then write tests first. Unit, integration, E2E. Confirm all tests fail, then start implementing. After implementation, self-review, commit, open a PR, pass CI, respond to code review, merge.
+
+When I split each of these into its own skill file, I ended up with dozens.
+
+</LangBlock>
+
+---
+
+<LangBlock lang="ko">
+
+## 단순 넘버링에서 그룹핑으로
+
+처음에는 각 스킬의 파일명만 봐도 순서가 직관적일 수 있게 넘버를 붙였다. `01-create-ticket.md`, `02-make-branch.md`, `03-write-spec.md`. 그랬더니 파일 목록만 봐도 작업 흐름이 한눈에 들어왔다.
+
+근데 스킬이 많아지면서 불편한 점이 생겼다. 내 워크플로우에서 빠르게 어떤 스킬을 추가하거나 보완하려고 할 때, 수십 개가 쭉 나열되어 있으니까 어디를 건드려야 하는지 파악이 어려웠다. 그리고 스킬들은 추가되기도 하고, 삭제되기도 하고, 병합되기도 하는데, 이때마다 넘버링을 고치는 게 불편했다. 1, 2, 3으로 매겨놓으면 중간에 하나 끼워넣을 때 뒤의 번호를 전부 밀어야 했다.
+
+그래서 10 단위로 그룹핑을 했다. `00x`는 setup, `01x`는 티켓/브랜치, `02x`는 spec과 plan, `03x`는 테스트, `04x`는 구현, `05x`는 커밋/PR, `06x`는 CI, `07x`는 코드 리뷰, `08x`는 마무리. 한 그룹 안에서 스킬을 추가하거나 삭제해도 다른 그룹에 영향이 없다. 의미론적으로 관리하기 쉽고, 에이전트한테 "테스트 관련 스킬을 수정해"라고 시켰을 때 `04x` 그룹만 보면 된다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## From simple numbering to grouping
+
+At first I numbered each skill file so the order would be intuitive just from the filename. `01-create-ticket.md`, `02-make-branch.md`, `03-write-spec.md`. The file list alone showed the workflow at a glance.
+
+But as skills grew, it got uncomfortable. When I needed to quickly add or update a skill in my workflow, dozens of files in a flat list made it hard to find where to make changes. On top of that, skills get added, deleted, and merged over time, and renumbering every time was a pain. With 1, 2, 3 sequential numbering, inserting one skill in the middle meant pushing every number after it.
+
+So I grouped them by tens. `00x` for setup, `01x` for ticket/branch, `02x` for spec and plan, `03x` for tests, `04x` for implementation, `05x` for commit/PR, `06x` for CI, `07x` for code review, `08x` for completion. Adding or removing a skill within a group doesn't affect other groups. It's easier to manage semantically, and when I tell the agent "modify the test-related skills," it only needs to look at the `03x` group.
+
+</LangBlock>
+
+<StepRegistry client:visible />
+
+---
+
+<LangBlock lang="ko">
+
+## 한 그룹 안에서 같은 규칙이 반복된다
+
+그룹핑을 하고 나니까, 같은 그룹 안에서 반복되는 지시사항이 눈에 띄었다. 예를 들어 테스트 그룹(`03x`)에는 유닛 테스트, 통합 테스트, E2E 테스트를 만드는 스킬이 각각 있다. 근데 이 세 스킬에는 공통으로 들어가야 하는 규칙이 있다.
+
+구현 전에 만드는 테스트니까, 테스트는 반드시 실패해야 한다. 통과하는 테스트를 짜면 안 된다. 통과는 구현 이후에 일어나야 하는 거니까. 그리고 mock을 만들지 않아야 한다. mock을 쓰면 테스트가 검증하는 게 실제 동작이 아니라 내가 가정한 동작이 된다. 실제 코드를 돌려야 한다.
+
+이런 규칙을 세 개 스킬에 각각 적어뒀다. 스킬이 세 개일 때는 그래도 됐다. 근데 규칙을 수정할 일이 생기면? 한 파일만 고치고 나머지 두 개를 빼먹는 일이 실제로 생겼다. 그리고 테스트 그룹만 이런 게 아니다. 모든 스텝에서 공통으로 지켜야 하는 규칙(state.json에 데이터를 저장하는 방법이나 스텝 완료 시 실행할 명령 같은 것들)도 매 파일마다 복붙되어 있었다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## Same rules repeat within a group
+
+After grouping, repeated instructions within the same group became obvious. For example, the test group (`03x`) has separate skills for unit tests, integration tests, and E2E tests. But all three share common rules.
+
+Since these tests are written before implementation, they must fail. Writing a passing test is wrong. Passing should only happen after implementation. And mocks should not be used. Mocking means the test verifies assumed behavior, not actual behavior. Run against real code.
+
+I wrote these rules into each of the three skill files. With three files, it was manageable. But when I needed to update a rule? I'd fix one file and forget the other two. And the test group wasn't the only one. Rules that apply to every step (how to save data to state.json, what command to run when a step is done) were copy-pasted across every file.
+
+</LangBlock>
+
+---
+
+<LangBlock lang="ko">
+
+## helpers: 공통 규칙을 한 곳에서 관리하기
+
+이 중복을 해결하기 위해 `helpers.yaml`을 만들었다. 구조는 두 가지다. `always`에 넣으면 모든 스텝에 자동으로 붙고, `on_demand`에 넣으면 스텝이 명시적으로 참조할 때만 붙는다.
+
+```yaml
+always:
+  state_transition:
+    body: |
+      ## State-Transition
+      - state.json 을 직접 편집하지 않는다
+      - 데이터 저장은 set-data.sh 를 통해서만
+      - 스텝이 끝나면 complete-step.sh 를 실행한다
+
+on_demand:
+  test_tiers:
+    body: |
+      ## Test-Tiers
+      - 구현 전 테스트는 반드시 실패해야 한다
+      - mock 을 만들지 않는다. 실제 코드를 돌린다
+      - 테스트가 검증하는 건 가정이 아니라 실제 동작이다
+```
+
+state 관리 규칙은 `always`에 있으니까 모든 스텝이 이 규칙을 본다. 테스트 규칙은 `on_demand`에 있고, 유닛 테스트 스킬이 파일 상단에 `Per helpers#test_tiers`라고 적으면 그때만 주입된다. 테스트와 상관없는 커밋 스텝에서는 이 규칙이 보이지 않는다.
+
+한 곳에서 관리하니까, 테스트 규칙을 고치면 참조하는 모든 스킬에 즉시 반영된다. 그리고 필요 없는 스텝에는 불필요한 컨텍스트를 주지 않는다.
+
+그러면 실제 스킬 파일은 어떻게 생겼을까. 유닛 테스트 스킬을 열어보면 이렇다.
+
+```
+# Step 030: MAKE_UNIT_TEST
+
+Per `helpers#test_tiers`
+
+## Checklist
+
+- [ ] mock/spy/stub 을 만들지 않는다. 실제 코드를 실행한다
+- [ ] 모든 테스트가 현재 시점에서 FAIL 하는지 확인
+- [ ] PASS 하는 테스트가 있으면 테스트가 잘못된 것이다
+```
+
+`Per helpers#test_tiers`. 이 한 줄이 있으면 방금 이야기한 테스트 규칙이 자동으로 주입된다. 나머지는 이 스텝에서만 필요한 체크리스트다. "유닛 테스트를 써"가 아니라, mock을 만들지 마, 실제 코드를 돌려, 지금은 반드시 실패해야 한다. 이런 판단 기준이 적혀 있다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## helpers: manage common rules in one place
+
+To solve this duplication, I created `helpers.yaml`. Two types: `always` gets appended to every step automatically, `on_demand` only gets appended when a step explicitly references it.
+
+```yaml
+always:
+  state_transition:
+    body: |
+      ## State-Transition
+      - Do not edit state.json directly
+      - Save data only through set-data.sh
+      - Run complete-step.sh when a step is done
+
+on_demand:
+  test_tiers:
+    body: |
+      ## Test-Tiers
+      - Pre-implementation tests must fail
+      - Do not create mocks. Run against real code
+      - Tests verify actual behavior, not assumed behavior
+```
+
+State management rules are in `always`, so every step sees them. Test rules are in `on_demand`, and a unit test skill writes `Per helpers#test_tiers` at the top. That's when they get injected. A commit step that has nothing to do with tests doesn't see these rules.
+
+Managed in one place, so fixing the test rules instantly applies to every skill that references them. And steps that don't need them get no extra context.
+
+So what does an actual skill file look like? Open the unit test skill:
+
+```
+# Step 030: MAKE_UNIT_TEST
+
+Per `helpers#test_tiers`
+
+## Checklist
+
+- [ ] Do not create mock/spy/stub. Run against real code
+- [ ] Verify all tests FAIL at this point
+- [ ] If any test PASSES, the test is wrong
+```
+
+`Per helpers#test_tiers`. This one line triggers the test rules injection we just discussed. The rest is a checklist specific to this step. Not "write unit tests," but don't mock, run real code, and it must fail right now. The criteria for doing it right.
+
+</LangBlock>
+
+---
+
+<LangBlock lang="ko">
+
+## 그런데 에이전트가 스킬을 안 읽는다
+
+여기까지 하면 구조 자체는 잘 잡혀 있다. 그룹핑으로 관리가 되고, helpers로 공통 규칙이 유지되고, 스킬마다 체크리스트와 판단 기준이 적혀 있다. 에이전트한테 "너는 이런 순서로 작업할 거야: SETUP → LINEAR_TICKET → SPECIFY → PLAN → ..." 이렇게 전체 목차를 주고 실행시키면, 순서대로 잘 돌았다. 그룹핑과 helpers 덕분에 유지보수도 편했다.
+
+근데 특정 스텝에서 이상한 일이 생기기 시작했다. 다음 스텝에서 해야 할 행동을 에이전트가 안 하는 거다. 체크리스트에 적어둔 규칙을 무시하고, 자기 방식으로 진행해버렸다. 왜 그러지?
+
+원인을 찾아보니, 에이전트가 해당 스킬을 읽지 않고 있었다. 전체 목차를 이미 알고 있으니까, 스킬 이름만 보고 "이건 뭘 하라는 건지 알겠다"고 예측해서 실제 파일을 열어보지 않은 것이다. `make-e2e-test.md`를 보면 "E2E 테스트를 만들면 되는 거지"라고 자기가 판단하고, 내가 적어둔 환경 세팅 규칙이나 mock 금지 같은 기준은 무시한 채 진행했다.
+
+스킬을 쪼갠 이유가 뭐였나. 해당 시점에 해당 지시사항만 보게 하려는 거였다. 그런데 전체 목차를 주면, 에이전트는 "다음이 뭔지 이미 안다"고 판단하고 실제 지시사항을 건너뛴다. 쪼갠 의미가 사라지는 순간이다.
+
+그리고 또 다른 문제도 있었다. 한 스텝의 작업이 길어지면, "다음 스텝의 스킬을 읽어야 한다"는 맥락 자체를 까먹는 경우가 생겼다. context rot을 제거하려고 스킬을 쪼갠 건데, 한 스텝 안에서 컨텍스트가 길어지면서 결국 다시 생겨버린 것이다. 스텝을 끝내고 나서 다음 스킬을 읽으러 가는 것조차 에이전트의 자율에 맡기면, 그 자율 자체가 실패 지점이 된다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## But the agent stops reading skills
+
+Up to this point, the structure itself is solid. Grouping keeps things manageable, helpers maintain common rules, and each skill has its own checklist and criteria. I gave the agent the full table of contents — "You'll work in this order: SETUP → LINEAR_TICKET → SPECIFY → PLAN → ..." and it ran through the steps in order. Grouping and helpers made maintenance easy too.
+
+But certain steps started going wrong. The agent wasn't doing what the next step required. It ignored the rules in the checklist and proceeded its own way. Why?
+
+I traced the cause: the agent wasn't reading the skill file. Since it already knew the full table of contents, it looked at the skill name, predicted "I know what this means," and never opened the actual file. Seeing `make-e2e-test.md`, it decided "just write E2E tests" and skipped the environment setup rules and no-mock criteria I'd written.
+
+Why did I split into skills in the first place? So the agent only sees the relevant instructions at the relevant moment. But give it the full table of contents, and it decides "I already know what's next" and skips the actual instructions. The entire point of splitting, gone.
+
+There was another problem too. When a single step's work ran long, the agent would forget the context of "I need to read the next step's skill file" entirely. I split skills to eliminate context rot, but when a single step grew long enough, context rot came right back. If even the act of reading the next skill is left to the agent's autonomy, that autonomy itself becomes the failure point.
+
+</LangBlock>
+
+<SkillSkipProblem client:visible />
+
+---
+
+<LangBlock lang="ko">
+
+## 다음 스텝은 에이전트가 고르지 않는다
+
+두 가지를 바꿨다.
+
+첫째, 전체 목차를 알려주지 않는다. 에이전트는 현재 스텝만 본다. 다음에 뭐가 오는지 모른다. 예측할 수 없으면 건너뛸 수도 없다.
+
+둘째, 스텝 간의 전이를 자연스러우면서도 구조적으로 만들었다. 모든 스킬 파일의 마지막에는 `complete-step.sh`를 실행하라는 지시가 있다. 에이전트가 이 쉘을 실행하면 세 가지가 일어난다: 현재 스텝이 완료로 마킹되고, 다음 스텝이 자동으로 결정되고, 다음 스텝의 마크다운이 에이전트의 컨텍스트에 출력된다.
+
+에이전트가 다음 스킬을 스스로 찾아서 읽는 게 아니다. 스크립트가 다음 지시사항을 에이전트한테 넘겨주는 것이다. 스킬 하나를 끝냈을 때 다음 지시사항이 자동으로 나오는 건 자연스러운 흐름이고, 여기에 에이전트의 자율성을 끼워넣어서 두 번 실행하게 만들 이유가 없다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## The agent doesn't choose the next step
+
+I changed two things.
+
+First, don't show the full table of contents. The agent only sees the current step. It doesn't know what comes next. If it can't predict, it can't skip.
+
+Second, make the transition between steps natural but structural. Every skill file ends with an instruction to run `complete-step.sh`. When the agent runs this shell command, three things happen: the current step is marked completed, the next step is automatically determined, and the next step's markdown is printed into the agent's context.
+
+The agent doesn't find and read the next skill on its own. The script hands the next instructions to the agent. When a skill is done, the next instructions appearing automatically is a natural flow. There's no reason to insert agent autonomy here and make it do the lookup twice.
+
+</LangBlock>
+
+<CompleteStepFlow client:visible />
+
+---
+
+<LangBlock lang="ko">
+
+## state.json: 에이전트가 건드릴 수 없는 상태
+
+`complete-step.sh`가 다음 스텝을 결정하려면, "지금 어디까지 왔는지"를 알아야 한다. 이걸 `.workflow/state.json`이라는 파일로 관리한다.
+
+state.json은 두 영역으로 나뉜다. `control`과 `data`.
+
+```json
+{
+  "control": {
+    "status": "running",
+    "current_step": "PLAN",
+    "steps": {
+      "SETUP": { "status": "completed" },
+      "LINEAR_TICKET": { "status": "completed" },
+      "PLAN": { "status": "running" },
+      "DEBATE_FOR_PLAN": { "status": "pending" }
+    }
+  },
+  "data": {
+    "ticket_id": "POP-123",
+    "pr_number": null,
+    "debate_for_plan_count": 0
+  }
+}
+```
+
+`control`은 상태 머신이다. 어떤 스텝이 완료됐고, 어떤 스텝이 진행 중이고, 어떤 스텝이 대기 중인지. 이건 `complete-step.sh` 같은 스크립트만 수정할 수 있다. 에이전트는 읽을 수는 있지만 직접 편집하지 못한다.
+
+`data`는 각 스텝이 생산하는 메타데이터다. 티켓 ID, PR 번호, 토론 횟수 같은 것들. 에이전트가 쓸 수 있지만, 반드시 전용 스크립트(`set-data.sh`)를 통해서만 쓴다.
+
+왜 이렇게 나눠야 하나. 에이전트가 state.json을 직접 편집할 수 있으면, 진행이 막혔을 때 "스텝을 완료로 바꿔버리고 넘어가자"를 할 수 있다. 상태 머신의 무결성이 깨진다. 제어 영역은 스크립트가 독점하고, 에이전트는 데이터 영역만, 그것도 스크립트를 경유해서만 쓰는 구조다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## state.json: state the agent can't touch
+
+For `complete-step.sh` to determine the next step, it needs to know "where we are right now." This is managed through a file called `.workflow/state.json`.
+
+state.json is split into two areas: `control` and `data`.
+
+```json
+{
+  "control": {
+    "status": "running",
+    "current_step": "PLAN",
+    "steps": {
+      "SETUP": { "status": "completed" },
+      "LINEAR_TICKET": { "status": "completed" },
+      "PLAN": { "status": "running" },
+      "DEBATE_FOR_PLAN": { "status": "pending" }
+    }
+  },
+  "data": {
+    "ticket_id": "POP-123",
+    "pr_number": null,
+    "debate_for_plan_count": 0
+  }
+}
+```
+
+`control` is the state machine. Which steps are completed, which is running, which are pending. Only scripts like `complete-step.sh` can modify this. The agent can read it but cannot edit it directly.
+
+`data` is metadata produced by each step. Ticket IDs, PR numbers, debate counts. The agent can write to it, but only through a dedicated script (`set-data.sh`).
+
+Why this split? If the agent could edit state.json directly, it could "mark the step as completed and move on" when it gets stuck. The state machine's integrity would break. The control plane is owned exclusively by scripts. The agent only writes to the data plane, and even then, only through scripts.
+
+</LangBlock>
+
+---
+
+<LangBlock lang="ko">
+
+## 자동화 파이프라인이 완성된 걸까?
+
+여기까지의 구조를 정리하면 이렇다. 내 작업 파이프라인을 수십 개 스킬로 쪼개고, 10 단위 그룹핑으로 관리한다. 공통 규칙은 `helpers.yaml`에서 한 곳에 관리하고, 각 스킬에 자동 주입하거나 명시적으로 참조한다. 에이전트는 현재 스텝의 지시만 보고, 끝나면 `complete-step.sh`를 실행해서 다음 지시를 받는다. 진행 상태는 `state.json`이 추적하고, 에이전트는 상태 머신을 직접 건드리지 못한다.
+
+이제 "이 기능 만들어줘" 하면 에이전트가 스킬을 하나씩 읽어가며 내 작업을 대신 해주는 파이프라인이 만들어졌다. 그래서 나는 기능 하나를 만들어달라 요청하고, 30분 뒤에 결과물을 확인하려고 했다. 근데 에이전트는 작업을 완성하지 못했다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+## Is the automation pipeline complete?
+
+Here's the structure so far. My work pipeline is split into dozens of skills, managed in groups of ten. Common rules live in `helpers.yaml`, auto-injected or explicitly referenced by each skill. The agent only sees the current step, runs `complete-step.sh` when done to receive the next. Progress is tracked in `state.json`, and the agent can't touch the state machine directly.
+
+Now I have a pipeline where I say "build this feature" and the agent works through skills one by one, doing my work for me. So I requested a feature and came back 30 minutes later to check the result. The agent hadn't finished.
+
+</LangBlock>
+
+<AutomationGap client:visible />
+
+<LangBlock lang="ko">
+
+에이전트가 스킬을 쭉 읽어가며 진행하지 않고, 중간에 질문을 해버렸다. 사실 당연하다. LLM은 언젠가 출력을 끝낸다. 아무리 스킬을 읽고 스텝을 수행해도, 언젠가는 멈출 수밖에 없다. 파이프라인은 만들었지만, 완벽한 자동화를 위해서는 몇 가지 트릭이 더 필요하다. 다음 편에서는 이 트릭에 대해 이야기한다.
+
+</LangBlock>
+
+<LangBlock lang="en">
+
+The agent didn't power through the skills. It stopped in the middle and asked a question. Which makes sense, really. LLMs eventually stop outputting. No matter how well the skills are written, the agent will stop at some point. The pipeline is built, but a few more tricks are needed for true automation. Next post covers those tricks.
+
+</LangBlock>
